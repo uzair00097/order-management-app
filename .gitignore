@@ -27,6 +27,15 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env
+
+# logs
+*.log
+
+# claude code internals
+.claude/
+.agents/
+skills-lock.json
 
 # vercel
 .vercel
@@ -34,3 +43,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma

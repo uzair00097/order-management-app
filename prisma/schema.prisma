@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  DISTRIBUTOR
+  SALESMAN
+}
+
+enum OrderStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  DELIVERED
+  CANCELLED
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  passwordHash  String
+  role          Role
+  distributorId String?
+  distributor   User?     @relation("SalesmanDistributor", fields: [distributorId], references: [id])
+  salesmen      User[]    @relation("SalesmanDistributor")
+  tokenVersion  Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  ordersAsSalesman    Order[]             @relation("SalesmanOrders")
+  ordersAsDistributor Order[]             @relation("DistributorOrders")
+  updatedOrders       Order[]             @relation("OrderUpdatedBy")
+  customers           Customer[]
+  products            Product[]
+  auditLogs           AuditLog[]
+  idempotencyRecords  IdempotencyRecord[]
+  pushSubscriptions   PushSubscription[]
+}
+
+model Customer {
+  id            String    @id @default(uuid())
+  name          String
+  address       String
+  phone         String?
+  creditLimit   Decimal   @default(0)
+  distributorId String
+  distributor   User      @relation(fields: [distributorId], references: [id])
+  orders        Order[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@index([distributorId])
+}
+
+model Product {
+  id            String      @id @default(uuid())
+  name          String
+  price         Decimal
+  stock         Int
+  distributorId String
+  distributor   User        @relation(fields: [distributorId], references: [id])
+  orderItems    OrderItem[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+
+  @@index([distributorId])
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  salesmanId    String
+  salesman      User        @relation("SalesmanOrders", fields: [salesmanId], references: [id])
+  distributorId String
+  distributor   User        @relation("DistributorOrders", fields: [distributorId], references: [id])
+  customerId    String
+  customer      Customer    @relation(fields: [customerId], references: [id])
+  status        OrderStatus @default(DRAFT)
+  notes         String?
+  lat           Decimal?
+  lng           Decimal?
+  updatedBy     String?
+  updatedByUser User?       @relation("OrderUpdatedBy", fields: [updatedBy], references: [id])
+  items         OrderItem[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+
+  @@index([distributorId, status])
+  @@index([salesmanId])
+  @@index([customerId])
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  unitPrice Decimal
+
+  @@index([orderId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityId, entityType])
+}
+
+model IdempotencyRecord {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  key            String
+  responseStatus Int
+  responseBody   Json
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+
+  @@unique([userId, key])
+  @@index([userId, key])
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model OrderArchive {
+  id            String   @id
+  salesmanId    String
+  distributorId String
+  customerId    String
+  status        String
+  notes         String?
+  items         Json
+  orderCreatedAt DateTime
+  orderUpdatedAt DateTime
+  archivedAt    DateTime @default(now())
+
+  @@index([distributorId])
+  @@index([salesmanId])
+}

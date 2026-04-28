@@ -73,7 +73,7 @@ async function postHandler(req: NextRequest) {
     return errorResponse("INVALID_INPUT", parsed.error.issues[0].message, 400, parsed.error.issues[0].path.join("."));
   }
 
-  const { customerId, items, notes, lat, lng } = parsed.data;
+  const { customerId, items, notes, discountAmount, lat, lng } = parsed.data;
   const { id: salesmanId, distributorId } = session.user;
 
   if (!distributorId) return errorResponse("UNAUTHORIZED", "Salesman not assigned to a distributor", 403);
@@ -106,6 +106,7 @@ async function postHandler(req: NextRequest) {
       customerId,
       status: "DRAFT",
       notes,
+      discountAmount,
       lat,
       lng,
       updatedBy: salesmanId,

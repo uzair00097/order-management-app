@@ -4,6 +4,30 @@ import { prisma } from "@/lib/prisma";
 import { UpdateCustomerSchema } from "@/lib/validations";
 import { errorResponse } from "@/lib/errors";
 
+export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  const session = await getSession();
+  if (!session) return errorResponse("UNAUTHORIZED", "Not authenticated", 401);
+  if (session.user.role !== "DISTRIBUTOR") return errorResponse("UNAUTHORIZED", "Only distributors can delete customers", 403);
+
+  const { id: userId } = session.user;
+
+  const customer = await prisma.customer.findFirst({
+    where: { id: params.id, distributorId: userId, deletedAt: null },
+  });
+  if (!customer) return errorResponse("NOT_FOUND", "Customer not found", 404);
+
+  await prisma.customer.update({
+    where: { id: params.id },
+    data: { deletedAt: new Date() },
+  });
+
+  await prisma.auditLog.create({
+    data: { userId, action: "CUSTOMER_DELETED", entityType: "Customer", entityId: params.id },
+  });
+
+  return new NextResponse(null, { status: 204 });
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getSession();
   if (!session) return errorResponse("UNAUTHORIZED", "Not authenticated", 401);

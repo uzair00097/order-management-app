@@ -26,7 +26,7 @@ async function getHandler(req: NextRequest) {
 
   const { limit, cursor, search } = parsed.data;
 
-  type ProductRow = { id: string; name: string; price: string; stock: number };
+  type ProductRow = { id: string; name: string; price: string; stock: number; imageUrl: string | null };
   let products: ProductRow[];
 
   if (search) {
@@ -35,7 +35,7 @@ async function getHandler(req: NextRequest) {
     const pattern = "%" + search + "%";
     products = await prisma.$queryRaw<ProductRow[]>(
       Prisma.sql`
-        SELECT id, name, price::text, stock
+        SELECT id, name, price::text, stock, "imageUrl"
         FROM "Product"
         WHERE "distributorId" = ${effectiveDistributorId}
           AND "deletedAt" IS NULL
@@ -53,7 +53,7 @@ async function getHandler(req: NextRequest) {
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       orderBy: { name: "asc" },
-      select: { id: true, name: true, price: true, stock: true },
+      select: { id: true, name: true, price: true, stock: true, imageUrl: true },
     });
     products = rows.map((r) => ({ ...r, price: r.price.toString() }));
   }
@@ -81,12 +81,12 @@ async function postHandler(req: NextRequest) {
     return errorResponse("INVALID_INPUT", parsed.error.issues[0].message, 400, parsed.error.issues[0].path.join("."));
   }
 
-  const { name, price, stock } = parsed.data;
+  const { name, price, stock, imageUrl } = parsed.data;
   const { id: userId } = session.user;
 
   const product = await prisma.product.create({
-    data: { name, price, stock, distributorId: userId },
-    select: { id: true, name: true, price: true, stock: true },
+    data: { name, price, stock, distributorId: userId, ...(imageUrl ? { imageUrl } : {}) },
+    select: { id: true, name: true, price: true, stock: true, imageUrl: true },
   });
 
   await prisma.auditLog.create({

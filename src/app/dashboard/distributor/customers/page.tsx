@@ -26,6 +26,9 @@ export default function DistributorCustomersPage() {
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
 
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   const fetchCustomers = useCallback(async (searchVal: string, cursorVal: string | null, append: boolean) => {
     const params = new URLSearchParams({ limit: "20" });
     if (searchVal) params.set("search", searchVal);
@@ -73,6 +76,15 @@ export default function DistributorCustomersPage() {
     setEditingCustomer(c);
     setEditCreditLimit(String(Number(c.creditLimit)));
     setEditError("");
+  }
+
+  async function deleteCustomer() {
+    if (!deleteId) return;
+    setDeleteLoading(true);
+    await fetch(`/api/customers/${deleteId}`, { method: "DELETE" });
+    setDeleteId(null);
+    setDeleteLoading(false);
+    await fetchCustomers(search, null, false);
   }
 
   async function updateCreditLimit(e: React.FormEvent) {
@@ -138,6 +150,28 @@ export default function DistributorCustomersPage() {
         </div>
       )}
 
+      {/* Delete confirmation modal */}
+      {deleteId && (
+        <div className="fixed inset-0 bg-black/40 z-30 flex items-end justify-center">
+          <div className="bg-white rounded-t-2xl w-full max-w-lg p-6">
+            <h2 className="text-base font-semibold text-gray-900 mb-1">Remove Customer?</h2>
+            <p className="text-sm text-gray-500 mb-5">
+              {customers.find((c) => c.id === deleteId)?.name} will be removed. This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteId(null)}
+                className="flex-1 border border-gray-300 rounded-lg py-2.5 text-sm font-medium text-gray-600">
+                Cancel
+              </button>
+              <button onClick={deleteCustomer} disabled={deleteLoading}
+                className="flex-1 bg-red-600 text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50 hover:bg-red-700 transition-colors">
+                {deleteLoading ? "Removing…" : "Remove"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {editingCustomer && (
         <div className="fixed inset-0 bg-black/40 z-30 flex items-end justify-center">
           <div className="bg-white rounded-t-2xl w-full max-w-lg p-6">
@@ -188,10 +222,18 @@ export default function DistributorCustomersPage() {
                   Limit: PKR {Number(c.creditLimit).toLocaleString("en-PK", { minimumFractionDigits: 0 })}
                 </p>
               </div>
-              <button onClick={() => openEdit(c)}
-                className="shrink-0 text-xs text-indigo-600 border border-indigo-200 rounded-lg px-2.5 py-1.5 hover:bg-indigo-50 transition-colors">
-                Edit Limit
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button onClick={() => openEdit(c)}
+                  className="text-xs text-indigo-600 border border-indigo-200 rounded-lg px-2.5 py-1.5 hover:bg-indigo-50 transition-colors">
+                  Edit Limit
+                </button>
+                <button onClick={() => setDeleteId(c.id)}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
             </div>
           ))}
 

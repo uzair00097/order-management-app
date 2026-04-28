@@ -26,6 +26,7 @@ export type SavedCart = {
   customer: { id: string; name: string; address: string; phone?: string };
   items: { product: { id: string; name: string; price: number; stock: number }; quantity: number }[];
   notes: string;
+  discountAmount: number;
 };
 
 export async function saveCart(data: SavedCart): Promise<void> {
@@ -72,6 +73,7 @@ export type PendingOrder = {
   customerId: string;
   items: { productId: string; quantity: number }[];
   notes?: string;
+  discountAmount?: number;
   orderId: string | null;
   createdAt: number;
 };

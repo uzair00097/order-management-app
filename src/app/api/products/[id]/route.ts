@@ -25,7 +25,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const updated = await prisma.product.update({
     where: { id: params.id },
     data: parsed.data,
-    select: { id: true, name: true, price: true, stock: true },
+    select: { id: true, name: true, price: true, stock: true, imageUrl: true },
   });
 
   await prisma.auditLog.create({

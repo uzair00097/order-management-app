@@ -11,6 +11,7 @@ export const CreateOrderSchema = z.object({
     )
     .min(1),
   notes: z.string().max(500).optional(),
+  discountAmount: z.number().nonnegative().default(0),
   lat: z.number().min(-90).max(90).optional(),
   lng: z.number().min(-180).max(180).optional(),
 });
@@ -23,11 +24,13 @@ export const CreateProductSchema = z.object({
   name: z.string().min(1).max(200),
   price: z.number().positive(),
   stock: z.number().int().nonnegative(),
+  imageUrl: z.string().url().optional(),
 });
 
 export const UpdateProductSchema = z.object({
   price: z.number().positive().optional(),
   stock: z.number().int().nonnegative().optional(),
+  imageUrl: z.string().url().nullable().optional(),
 });
 
 export const CreateCustomerSchema = z.object({

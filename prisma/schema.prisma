@@ -66,6 +66,7 @@ model Product {
   name          String
   price         Decimal
   stock         Int
+  imageUrl      String?
   distributorId String
   distributor   User        @relation(fields: [distributorId], references: [id])
   orderItems    OrderItem[]
@@ -84,10 +85,11 @@ model Order {
   distributor   User        @relation("DistributorOrders", fields: [distributorId], references: [id])
   customerId    String
   customer      Customer    @relation(fields: [customerId], references: [id])
-  status        OrderStatus @default(DRAFT)
-  notes         String?
-  lat           Decimal?
-  lng           Decimal?
+  status          OrderStatus @default(DRAFT)
+  notes           String?
+  discountAmount  Decimal     @default(0)
+  lat             Decimal?
+  lng             Decimal?
   updatedBy     String?
   updatedByUser User?       @relation("OrderUpdatedBy", fields: [updatedBy], references: [id])
   items         OrderItem[]

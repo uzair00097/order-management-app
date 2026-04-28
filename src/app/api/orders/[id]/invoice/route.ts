@@ -35,8 +35,6 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const page = pdfDoc.addPage(PageSizes.A4);
   const { width, height } = page.getSize();
   const margin = 50;
-  const contentWidth = width - margin * 2;
-
   const gray = rgb(0.42, 0.45, 0.5);
   const lightGray = rgb(0.9, 0.91, 0.92);
   const black = rgb(0, 0, 0);

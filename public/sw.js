@@ -120,6 +120,7 @@ async function syncPendingOrders() {
             customerId: po.customerId,
             items: po.items,
             notes: po.notes,
+            discountAmount: po.discountAmount ?? 0,
           }),
         });
 

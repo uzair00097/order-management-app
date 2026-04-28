@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { errorResponse } from "@/lib/errors";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const session = await getSession();
   if (!session || session.user.role !== "ADMIN") return errorResponse("UNAUTHORIZED", "Admins only", 403);
 

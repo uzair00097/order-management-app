@@ -141,7 +141,7 @@ export default function DistributorOrdersPage() {
               </div>
 
               {order.notes && (
-                <p className="text-xs text-gray-500 italic mb-3">"{order.notes}"</p>
+                <p className="text-xs text-gray-500 italic mb-3">&quot;{order.notes}&quot;</p>
               )}
 
               {/* Location + invoice row */}

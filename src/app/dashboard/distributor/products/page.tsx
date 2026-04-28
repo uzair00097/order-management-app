@@ -41,6 +41,10 @@ export default function DistributorProductsPage() {
   const [addError, setAddError] = useState("");
   const addFileRef = useRef<HTMLInputElement>(null);
 
+  // Delete product
+  const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   // Edit product modal
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [editPrice, setEditPrice] = useState("");
@@ -104,6 +108,15 @@ export default function DistributorProductsPage() {
     setAddLoading(false);
   }
 
+  async function confirmDelete() {
+    if (!deleteProduct) return;
+    setDeleteLoading(true);
+    await fetch(`/api/products/${deleteProduct.id}`, { method: "DELETE" });
+    setDeleteProduct(null);
+    setDeleteLoading(false);
+    await fetchProducts(search, null, false);
+  }
+
   function openEdit(p: Product) {
     setEditProduct(p);
     setEditPrice("");
@@ -142,7 +155,7 @@ export default function DistributorProductsPage() {
         <h1 className="text-lg font-semibold text-gray-900">Products</h1>
         <button
           onClick={() => setShowAdd(true)}
-          className="bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+          className="bg-purple-800 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-purple-900 transition-colors"
         >
           + Add
         </button>
@@ -156,12 +169,12 @@ export default function DistributorProductsPage() {
             {addError && <p className="text-sm text-red-600 mb-3">{addError}</p>}
             <form onSubmit={addProduct} className="space-y-3">
               <input required placeholder="Product name" value={newName} onChange={(e) => setNewName(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-700" />
               <div className="flex gap-3">
                 <input required type="number" min="0" step="0.01" placeholder="Price (Rs)" value={newPrice} onChange={(e) => setNewPrice(e.target.value)}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-700" />
                 <input required type="number" min="0" placeholder="Stock" value={newStock} onChange={(e) => setNewStock(e.target.value)}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-700" />
               </div>
               <div>
                 <input ref={addFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
@@ -179,7 +192,7 @@ export default function DistributorProductsPage() {
                   </div>
                 ) : (
                   <button type="button" onClick={() => addFileRef.current?.click()}
-                    className="w-full border-2 border-dashed border-gray-300 rounded-lg py-6 text-sm text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors">
+                    className="w-full border-2 border-dashed border-gray-300 rounded-lg py-6 text-sm text-gray-400 hover:border-purple-600 hover:text-purple-700 transition-colors">
                     + Add product image (optional)
                   </button>
                 )}
@@ -188,11 +201,33 @@ export default function DistributorProductsPage() {
                 <button type="button" onClick={() => { setShowAdd(false); setNewImageFile(null); setNewImagePreview(null); }}
                   className="flex-1 border border-gray-300 rounded-lg py-2.5 text-sm font-medium text-gray-600">Cancel</button>
                 <button type="submit" disabled={addLoading}
-                  className="flex-1 bg-indigo-600 text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50">
+                  className="flex-1 bg-purple-800 text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50">
                   {addLoading ? "Adding…" : "Add Product"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {deleteProduct && (
+        <div className="fixed inset-0 bg-black/40 z-30 flex items-end justify-center">
+          <div className="bg-white rounded-t-2xl w-full max-w-lg p-6">
+            <h2 className="text-base font-semibold text-gray-900 mb-1">Delete Product?</h2>
+            <p className="text-sm text-gray-500 mb-5">
+              <span className="font-medium text-gray-800">{deleteProduct.name}</span> will be permanently removed.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteProduct(null)}
+                className="flex-1 border border-gray-300 rounded-lg py-2.5 text-sm font-medium text-gray-600">
+                Cancel
+              </button>
+              <button onClick={confirmDelete} disabled={deleteLoading}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50 transition-colors">
+                {deleteLoading ? "Deleting…" : "Delete"}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -207,10 +242,10 @@ export default function DistributorProductsPage() {
               <div className="flex gap-3">
                 <input type="number" min="0" step="0.01" placeholder={`Price: ${Number(editProduct.price).toFixed(0)}`}
                   value={editPrice} onChange={(e) => setEditPrice(e.target.value)}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-700" />
                 <input type="number" min="0" placeholder={`Stock: ${editProduct.stock}`}
                   value={editStock} onChange={(e) => setEditStock(e.target.value)}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-700" />
               </div>
               <div>
                 <input ref={editFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
@@ -228,7 +263,7 @@ export default function DistributorProductsPage() {
                   </div>
                 ) : (
                   <button type="button" onClick={() => editFileRef.current?.click()}
-                    className="w-full border-2 border-dashed border-gray-300 rounded-lg py-5 text-sm text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors">
+                    className="w-full border-2 border-dashed border-gray-300 rounded-lg py-5 text-sm text-gray-400 hover:border-purple-600 hover:text-purple-700 transition-colors">
                     + Change image
                   </button>
                 )}
@@ -237,7 +272,7 @@ export default function DistributorProductsPage() {
                 <button type="button" onClick={() => { setEditProduct(null); setEditImageFile(null); setEditImagePreview(null); }}
                   className="flex-1 border border-gray-300 rounded-lg py-2.5 text-sm font-medium text-gray-600">Cancel</button>
                 <button onClick={saveEdit} disabled={editLoading}
-                  className="flex-1 bg-indigo-600 text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50">
+                  className="flex-1 bg-purple-800 text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50">
                   {editLoading ? "Saving…" : "Save Changes"}
                 </button>
               </div>
@@ -251,7 +286,7 @@ export default function DistributorProductsPage() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
         </svg>
         <input type="search" placeholder="Search products…" value={search} onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+          className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-700 bg-white" />
       </div>
 
       {loading ? (
@@ -265,21 +300,31 @@ export default function DistributorProductsPage() {
               <div key={p.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
                 <div className="relative">
                   <ProductImage imageUrl={p.imageUrl} name={p.name} />
-                  <button
-                    onClick={() => openEdit(p)}
-                    className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                  </button>
+                  <div className="absolute top-2 right-2 flex flex-col gap-1">
+                    <button
+                      onClick={() => openEdit(p)}
+                      className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow text-gray-500 hover:text-purple-800 transition-colors"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => setDeleteProduct(p)}
+                      className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow text-gray-500 hover:text-red-500 transition-colors"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 <div className="p-3">
                   <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
                     {p.stock > 0 ? `${p.stock} units` : <span className="text-red-400">Out of stock</span>}
                   </p>
-                  <p className="text-sm font-bold text-indigo-600 mt-1">Rs {Number(p.price).toFixed(0)}</p>
+                  <p className="text-sm font-bold text-purple-800 mt-1">Rs {Number(p.price).toFixed(0)}</p>
                 </div>
               </div>
             ))}
@@ -288,7 +333,7 @@ export default function DistributorProductsPage() {
           {hasMore && (
             <button onClick={() => { setLoadingMore(true); fetchProducts(search, cursor, true).finally(() => setLoadingMore(false)); }}
               disabled={loadingMore}
-              className="w-full mt-4 py-2.5 text-sm text-indigo-600 font-medium rounded-xl border border-indigo-200 hover:bg-indigo-50 transition-colors disabled:opacity-50">
+              className="w-full mt-4 py-2.5 text-sm text-purple-800 font-medium rounded-xl border border-purple-200 hover:bg-purple-50 transition-colors disabled:opacity-50">
               {loadingMore ? "Loading…" : "Load more"}
             </button>
           )}

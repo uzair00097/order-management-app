@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!parsed.success) return errorResponse("INVALID_INPUT", parsed.error.issues[0].message, 400);
 
   const { status: newStatus } = parsed.data;
-  const { id: userId, role, distributorId } = session.user;
+  const { id: userId, role } = session.user;
 
   const order = await prisma.order.findFirst({
     where: { id: params.id, deletedAt: null },

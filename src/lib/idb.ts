@@ -47,7 +47,8 @@ export async function loadCart(): Promise<SavedCart | null> {
     req.onsuccess = () => {
       const result = req.result;
       if (!result) return resolve(null);
-      const { id: _id, ...data } = result;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _, ...data } = result;
       resolve(data as SavedCart);
     };
     req.onerror = () => reject(req.error);

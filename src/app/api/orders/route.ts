@@ -16,7 +16,7 @@ async function getHandler(req: NextRequest) {
   if (!parsed.success) return errorResponse("INVALID_INPUT", "Invalid query params", 400);
 
   const { limit, cursor, status, from, to, customerId } = parsed.data;
-  const { id, role, distributorId } = session.user;
+  const { id, role } = session.user;
 
   const where: Record<string, unknown> = {
     deletedAt: null,

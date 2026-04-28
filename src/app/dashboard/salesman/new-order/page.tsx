@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
@@ -342,7 +342,7 @@ export default function NewOrderPage() {
         <h2 className="text-base font-semibold text-gray-900 mb-1">{t("orderQueued")}</h2>
         <p className="text-sm text-gray-500 mb-6">{t("orderQueuedDesc")}</p>
         <button onClick={() => router.push("/dashboard/salesman/orders")}
-          className="text-sm text-blue-600 font-medium underline">{t("orders")}</button>
+          className="text-sm text-purple-800 font-medium underline">{t("orders")}</button>
       </div>
     );
   }
@@ -359,10 +359,10 @@ export default function NewOrderPage() {
 
       {/* Pending sync banner */}
       {hasPending && isOnline && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between gap-2">
-          <p className="text-xs text-blue-800 font-medium">{t("pendingSyncBanner")}</p>
+        <div className="bg-purple-50 border border-purple-200 rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between gap-2">
+          <p className="text-xs text-purple-800 font-medium">{t("pendingSyncBanner")}</p>
           <button onClick={triggerSync} disabled={syncing}
-            className="text-xs text-blue-700 font-semibold underline disabled:opacity-50 flex-shrink-0">
+            className="text-xs text-purple-900 font-semibold underline disabled:opacity-50 flex-shrink-0">
             {syncing ? t("syncing") : t("syncNow")}
           </button>
         </div>
@@ -385,11 +385,11 @@ export default function NewOrderPage() {
         {(["customer", "products", "confirm"] as Step[]).map((s, i) => (
           <div key={s} className="flex items-center gap-2">
             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-              step === s ? "bg-blue-600 text-white" : i < ["customer","products","confirm"].indexOf(step) ? "bg-green-500 text-white" : "bg-gray-200 text-gray-500"
+              step === s ? "bg-purple-800 text-white" : i < ["customer","products","confirm"].indexOf(step) ? "bg-green-500 text-white" : "bg-gray-200 text-gray-500"
             }`}>
               {i < ["customer","products","confirm"].indexOf(step) ? "✓" : i + 1}
             </div>
-            <span className={`text-xs font-medium ${step === s ? "text-blue-600" : "text-gray-400"}`}>
+            <span className={`text-xs font-medium ${step === s ? "text-purple-800" : "text-gray-400"}`}>
               {s === "customer" ? "Customer" : s === "products" ? "Products" : "Confirm"}
             </span>
             {i < 2 && <div className="w-8 h-px bg-gray-200" />}
@@ -407,7 +407,7 @@ export default function NewOrderPage() {
             </svg>
             <input type="search" placeholder={t("searchCustomers")} value={customerSearch}
               onChange={(e) => setCustomerSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+              className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-700 bg-white" />
           </div>
 
           {loadingCustomers ? (
@@ -418,7 +418,7 @@ export default function NewOrderPage() {
             <div className="space-y-2">
               {customers.map((c) => (
                 <button key={c.id} onClick={() => { setSelectedCustomer(c); setStep("products"); }}
-                  className="w-full text-left bg-white rounded-xl border border-gray-200 px-4 py-3 hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                  className="w-full text-left bg-white rounded-xl border border-gray-200 px-4 py-3 hover:border-purple-600 hover:bg-purple-50 transition-colors">
                   <p className="text-sm font-medium text-gray-900">{c.name}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{c.address}</p>
                 </button>
@@ -432,7 +432,7 @@ export default function NewOrderPage() {
       {step === "products" && (
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <button onClick={() => setStep("customer")} className="text-blue-600">
+            <button onClick={() => setStep("customer")} className="text-purple-800">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
@@ -449,7 +449,7 @@ export default function NewOrderPage() {
             </svg>
             <input type="search" placeholder={t("searchProducts")} value={productSearch}
               onChange={(e) => setProductSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+              className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-700 bg-white" />
           </div>
 
           {/* Product detail modal */}
@@ -470,7 +470,7 @@ export default function NewOrderPage() {
                   </button>
                   <span className="text-xs text-gray-400">{activeProductIdx + 1} / {products.length}</span>
                   {qty > 0 ? (
-                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 rounded-full px-2.5 py-1">{qty} in cart</span>
+                    <span className="text-xs font-semibold text-purple-800 bg-purple-50 rounded-full px-2.5 py-1">{qty} in cart</span>
                   ) : <div className="w-16" />}
                 </div>
 
@@ -513,7 +513,7 @@ export default function NewOrderPage() {
                 <div className="bg-white px-5 pt-4 pb-8 border-t border-gray-100">
                   <h2 className="text-base font-bold text-gray-900">{p.name}</h2>
                   <div className="flex items-center justify-between mt-1">
-                    <span className="text-xl font-bold text-blue-600">Rs {Number(p.price).toFixed(0)}</span>
+                    <span className="text-xl font-bold text-purple-800">Rs {Number(p.price).toFixed(0)}</span>
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${outOfStock ? "bg-red-50 text-red-500" : "bg-green-50 text-green-600"}`}>
                       {outOfStock ? "Out of stock" : `${p.stock} units available`}
                     </span>
@@ -528,11 +528,11 @@ export default function NewOrderPage() {
                           className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 font-bold text-2xl">−</button>
                         <span className="flex-1 text-center text-2xl font-bold text-gray-900">{qty}</span>
                         <button onClick={() => updateCart(p, qty + 1)} disabled={qty >= p.stock}
-                          className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-2xl disabled:bg-gray-200">+</button>
+                          className="w-12 h-12 rounded-full bg-purple-800 flex items-center justify-center text-white font-bold text-2xl disabled:bg-gray-200">+</button>
                       </div>
                     ) : (
                       <button onClick={() => updateCart(p, 1)}
-                        className="w-full py-3.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors">
+                        className="w-full py-3.5 rounded-xl bg-purple-800 text-white font-semibold text-sm hover:bg-purple-900 transition-colors">
                         Add to Order
                       </button>
                     )}
@@ -550,7 +550,7 @@ export default function NewOrderPage() {
                 const qty = cartQty(p.id);
                 const outOfStock = p.stock === 0;
                 return (
-                  <div key={p.id} className={`bg-white rounded-2xl border overflow-hidden shadow-sm ${outOfStock ? "opacity-50" : "border-gray-200"} ${qty > 0 ? "border-blue-400 ring-2 ring-blue-100" : ""}`}>
+                  <div key={p.id} className={`bg-white rounded-2xl border overflow-hidden shadow-sm ${outOfStock ? "opacity-50" : "border-gray-200"} ${qty > 0 ? "border-purple-600 ring-2 ring-purple-100" : ""}`}>
                     {/* Tappable image + name opens detail modal */}
                     <button className="w-full text-left" onClick={() => setActiveProductIdx(idx)}>
                       <div className="w-full aspect-square bg-gray-100 overflow-hidden">
@@ -566,7 +566,7 @@ export default function NewOrderPage() {
                       </div>
                       <div className="px-2.5 pt-2">
                         <p className="text-xs font-semibold text-gray-900 truncate">{p.name}</p>
-                        <p className="text-xs font-bold text-blue-600 mt-0.5">Rs {Number(p.price).toFixed(0)}</p>
+                        <p className="text-xs font-bold text-purple-800 mt-0.5">Rs {Number(p.price).toFixed(0)}</p>
                         <p className="text-[10px] text-gray-400">{outOfStock ? "Out of stock" : `${p.stock} left`}</p>
                       </div>
                     </button>
@@ -578,11 +578,11 @@ export default function NewOrderPage() {
                             className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 font-bold text-base leading-none">−</button>
                           <span className="w-5 text-center text-sm font-bold text-gray-900">{qty}</span>
                           <button onClick={() => updateCart(p, qty + 1)} disabled={qty >= p.stock}
-                            className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-base leading-none disabled:bg-gray-200">+</button>
+                            className="w-7 h-7 rounded-full bg-purple-800 flex items-center justify-center text-white font-bold text-base leading-none disabled:bg-gray-200">+</button>
                         </div>
                       ) : (
                         <button onClick={() => updateCart(p, 1)} disabled={outOfStock}
-                          className="w-full py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold disabled:bg-gray-200 disabled:text-gray-400">
+                          className="w-full py-1.5 rounded-lg bg-purple-800 text-white text-xs font-semibold disabled:bg-gray-200 disabled:text-gray-400">
                           Add
                         </button>
                       )}
@@ -597,7 +597,7 @@ export default function NewOrderPage() {
             <div className="fixed bottom-20 left-0 right-0 px-4 z-10">
               <div className="max-w-lg mx-auto">
                 <button onClick={() => setStep("confirm")}
-                  className="w-full bg-blue-600 text-white rounded-xl py-3.5 font-medium text-sm flex items-center justify-between px-5 shadow-lg">
+                  className="w-full bg-purple-800 text-white rounded-xl py-3.5 font-medium text-sm flex items-center justify-between px-5 shadow-lg">
                   <span>{cart.length} item{cart.length > 1 ? "s" : ""}</span>
                   <span>Review Order →</span>
                   <span>Rs {cartSubtotal.toFixed(0)}</span>
@@ -612,7 +612,7 @@ export default function NewOrderPage() {
       {step === "confirm" && (
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <button onClick={() => setStep("products")} className="text-blue-600">
+            <button onClick={() => setStep("products")} className="text-purple-800">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
@@ -677,14 +677,14 @@ export default function NewOrderPage() {
                 <button
                   type="button"
                   onClick={() => { setDiscountType("pct"); setDiscountInput(""); }}
-                  className={`px-3 py-2 transition-colors ${discountType === "pct" ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-50"}`}
+                  className={`px-3 py-2 transition-colors ${discountType === "pct" ? "bg-purple-800 text-white" : "text-gray-500 hover:bg-gray-50"}`}
                 >
                   %
                 </button>
                 <button
                   type="button"
                   onClick={() => { setDiscountType("flat"); setDiscountInput(""); }}
-                  className={`px-3 py-2 transition-colors ${discountType === "flat" ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-50"}`}
+                  className={`px-3 py-2 transition-colors ${discountType === "flat" ? "bg-purple-800 text-white" : "text-gray-500 hover:bg-gray-50"}`}
                 >
                   Rs
                 </button>
@@ -697,7 +697,7 @@ export default function NewOrderPage() {
                 placeholder={discountType === "pct" ? "e.g. 10" : "e.g. 500"}
                 value={discountInput}
                 onChange={(e) => setDiscountInput(e.target.value)}
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-700"
               />
             </div>
             {discountAmount > 0 && (
@@ -712,7 +712,7 @@ export default function NewOrderPage() {
             <label className="text-xs text-gray-500 block mb-1">{t("notes")}</label>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
               placeholder={t("notesPlaceholder")} rows={3}
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-700 resize-none" />
           </div>
 
           {submitError && (
@@ -723,7 +723,7 @@ export default function NewOrderPage() {
           )}
 
           <button onClick={submitOrder} disabled={submitting}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl py-3.5 font-semibold text-sm transition-colors flex items-center justify-center gap-2">
+            className="w-full bg-purple-800 hover:bg-purple-900 disabled:bg-purple-600 text-white rounded-xl py-3.5 font-semibold text-sm transition-colors flex items-center justify-center gap-2">
             {submitting && <Spinner className="h-4 w-4 text-white" />}
             {submitting ? t("submitting") : isOnline ? t("placeOrder") : t("saveOrderOffline")}
           </button>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useCallback } from "react";
 import { Spinner } from "@/components/ui/Spinner";
 
@@ -97,9 +97,9 @@ export default function AdminUsersPage() {
 
   const roleBadge = (role: string) => {
     const styles: Record<string, string> = {
-      ADMIN: "bg-purple-100 text-purple-700",
+      ADMIN: "bg-purple-100 text-purple-900",
       DISTRIBUTOR: "bg-indigo-100 text-indigo-700",
-      SALESMAN: "bg-blue-100 text-blue-700",
+      SALESMAN: "bg-purple-100 text-purple-900",
     };
     return <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${styles[role] ?? ""}`}>{role}</span>;
   };
@@ -109,7 +109,7 @@ export default function AdminUsersPage() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-lg font-semibold text-gray-900">User Management</h1>
         <button onClick={() => setShowAdd(true)}
-          className="bg-purple-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+          className="bg-purple-800 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-purple-900 transition-colors">
           + Add User
         </button>
       </div>
@@ -122,19 +122,19 @@ export default function AdminUsersPage() {
             {addError && <p className="text-sm text-red-600 mb-3">{addError}</p>}
             <form onSubmit={addUser} className="space-y-3">
               <input required placeholder="Full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-700" />
               <input required type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-700" />
               <input required type="password" placeholder="Password (min 6 chars)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-700" />
               <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-700">
                 <option value="SALESMAN">Salesman</option>
                 <option value="DISTRIBUTOR">Distributor</option>
               </select>
               {form.role === "SALESMAN" && (
                 <select required value={form.distributorId} onChange={(e) => setForm({ ...form, distributorId: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-700">
                   <option value="">Select distributor…</option>
                   {distributors.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
@@ -143,7 +143,7 @@ export default function AdminUsersPage() {
                 <button type="button" onClick={() => setShowAdd(false)}
                   className="flex-1 border border-gray-300 rounded-lg py-2.5 text-sm font-medium text-gray-600">Cancel</button>
                 <button type="submit" disabled={addLoading}
-                  className="flex-1 bg-purple-600 text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50">
+                  className="flex-1 bg-purple-800 text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50">
                   {addLoading ? "Creating…" : "Create User"}
                 </button>
               </div>
@@ -159,7 +159,7 @@ export default function AdminUsersPage() {
             <h2 className="text-base font-semibold mb-1">Reassign Distributor</h2>
             <p className="text-sm text-gray-500 mb-4">{assigningUser.name}</p>
             <select value={assignDistId} onChange={(e) => setAssignDistId(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500">
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-purple-700">
               <option value="">Unassign (no distributor)</option>
               {distributors.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
@@ -167,7 +167,7 @@ export default function AdminUsersPage() {
               <button onClick={() => setAssigningUser(null)}
                 className="flex-1 border border-gray-300 rounded-lg py-2.5 text-sm font-medium text-gray-600">Cancel</button>
               <button onClick={assignDistributor} disabled={assignLoading}
-                className="flex-1 bg-purple-600 text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50">
+                className="flex-1 bg-purple-800 text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50">
                 {assignLoading ? "Saving…" : "Save Assignment"}
               </button>
             </div>
@@ -180,7 +180,7 @@ export default function AdminUsersPage() {
         {ROLE_FILTERS.map((r) => (
           <button key={r} onClick={() => setRoleFilter(r)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              roleFilter === r ? "bg-purple-600 text-white border-purple-600" : "bg-white text-gray-600 border-gray-200"
+              roleFilter === r ? "bg-purple-800 text-white border-purple-800" : "bg-white text-gray-600 border-gray-200"
             }`}>
             {r}
           </button>
@@ -211,7 +211,7 @@ export default function AdminUsersPage() {
                 <div className="flex items-center gap-2 ml-2">
                   {user.role === "SALESMAN" && (
                     <button onClick={() => { setAssigningUser(user); setAssignDistId(user.distributorId ?? ""); }}
-                      className="text-xs text-purple-600 hover:underline font-medium">Reassign</button>
+                      className="text-xs text-purple-800 hover:underline font-medium">Reassign</button>
                   )}
                   <button onClick={() => deleteUser(user.id)}
                     className="text-xs text-red-500 hover:underline font-medium">Delete</button>

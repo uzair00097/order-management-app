@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -46,7 +46,7 @@ export function SalesmanNav() {
               key={link.href}
               href={link.href}
               className={`flex-1 flex flex-col items-center py-3 gap-1 text-xs font-medium transition-colors ${
-                active ? "text-blue-600" : "text-gray-500 hover:text-gray-700"
+                active ? "text-purple-800" : "text-gray-500 hover:text-gray-700"
               }`}
             >
               {link.icon}

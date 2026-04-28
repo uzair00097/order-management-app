@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useCallback } from "react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Spinner } from "@/components/ui/Spinner";
@@ -86,7 +86,7 @@ export default function SalesmanOrdersPage() {
             onClick={() => setStatusFilter(s)}
             className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
               statusFilter === s
-                ? "bg-blue-600 text-white border-blue-600"
+                ? "bg-purple-800 text-white border-purple-800"
                 : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
             }`}
           >
@@ -151,7 +151,7 @@ export default function SalesmanOrdersPage() {
             <button
               onClick={loadMore}
               disabled={loadingMore}
-              className="w-full py-2.5 text-sm text-blue-600 font-medium rounded-xl border border-blue-200 hover:bg-blue-50 transition-colors disabled:opacity-50"
+              className="w-full py-2.5 text-sm text-purple-800 font-medium rounded-xl border border-purple-200 hover:bg-purple-50 transition-colors disabled:opacity-50"
             >
               {loadingMore ? "Loading…" : "Load more"}
             </button>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useCallback } from "react";
 import { Spinner } from "@/components/ui/Spinner";
 import Image from "next/image";
@@ -58,7 +58,7 @@ export default function SalesmanProductsPage() {
           placeholder="Search products…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-700 bg-white"
         />
       </div>
 
@@ -77,7 +77,7 @@ export default function SalesmanProductsPage() {
                   <p className="text-xs text-gray-400 mt-0.5">
                     {p.stock > 0 ? `${p.stock} units` : <span className="text-red-400">Out of stock</span>}
                   </p>
-                  <p className="text-sm font-bold text-blue-600 mt-1">Rs {Number(p.price).toFixed(0)}</p>
+                  <p className="text-sm font-bold text-purple-800 mt-1">Rs {Number(p.price).toFixed(0)}</p>
                 </div>
               </div>
             ))}
@@ -87,7 +87,7 @@ export default function SalesmanProductsPage() {
             <button
               onClick={() => { setLoadingMore(true); fetchProducts(search, cursor, true).finally(() => setLoadingMore(false)); }}
               disabled={loadingMore}
-              className="w-full mt-4 py-2.5 text-sm text-blue-600 font-medium rounded-xl border border-blue-200 hover:bg-blue-50 transition-colors disabled:opacity-50"
+              className="w-full mt-4 py-2.5 text-sm text-purple-800 font-medium rounded-xl border border-purple-200 hover:bg-purple-50 transition-colors disabled:opacity-50"
             >
               {loadingMore ? "Loading…" : "Load more"}
             </button>

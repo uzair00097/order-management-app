@@ -19,9 +19,9 @@ async function main() {
 
   const distributor = await prisma.user.upsert({
     where: { email: "distributor@demo.com" },
-    update: {},
+    update: { name: "HR ENTERPRICES" },
     create: {
-      name: "Demo Distributor",
+      name: "HR ENTERPRICES",
       email: "distributor@demo.com",
       passwordHash: await hash("dist123"),
       role: "DISTRIBUTOR",

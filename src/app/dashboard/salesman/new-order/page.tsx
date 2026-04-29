@@ -290,7 +290,18 @@ export default function NewOrderPage() {
 
       if (!createRes.ok) {
         const err = await createRes.json();
-        setSubmitError(err.error?.message ?? "Failed to save order. Please retry.");
+        if (err.error?.code === "NOT_FOUND") {
+          // Stale cached cart — customer or product was removed
+          await clearCart();
+          setSelectedCustomer(null);
+          setCart([]);
+          setNotes("");
+          setDiscountInput("");
+          setStep("customer");
+          setSubmitError("Your saved order had items that are no longer available. Please start a new order.");
+        } else {
+          setSubmitError(err.error?.message ?? "Failed to save order. Please retry.");
+        }
         setSubmitting(false);
         return;
       }
@@ -381,6 +392,13 @@ export default function NewOrderPage() {
         </div>
       )}
 
+      {/* Global error banner (e.g. stale cache reset) */}
+      {submitError && step === "customer" && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 mb-4">
+          {submitError}
+        </div>
+      )}
+
       {/* Step indicator */}
       <div className="flex items-center gap-2 mb-6">
         {(["customer", "products", "confirm"] as Step[]).map((s, i) => (
@@ -418,7 +436,7 @@ export default function NewOrderPage() {
           ) : (
             <div className="space-y-2">
               {customers.map((c) => (
-                <button key={c.id} onClick={() => { setSelectedCustomer(c); setStep("products"); }}
+                <button key={c.id} onClick={() => { setSelectedCustomer(c); setStep("products"); setSubmitError(""); }}
                   className="w-full text-left bg-white rounded-xl border border-gray-200 px-4 py-3 hover:border-purple-600 hover:bg-purple-50 transition-colors">
                   <p className="text-sm font-medium text-gray-900">{c.name}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{c.address}</p>

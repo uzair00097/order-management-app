@@ -33,3 +33,8 @@ export const logger = {
 export function generateRequestId(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
+
+/** Read the request ID forwarded by middleware, or generate a fallback. */
+export function getRequestId(req: { headers: { get(key: string): string | null } }): string {
+  return req.headers.get("x-request-id") ?? generateRequestId();
+}

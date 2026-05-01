@@ -7,7 +7,7 @@ import { checkIdempotency, storeIdempotency } from "@/lib/idempotency";
 import { errorResponse } from "@/lib/errors";
 import { enqueue } from "@/lib/queue";
 import { withRateLimit } from "@/lib/withRateLimit";
-import { logger } from "@/lib/logger";
+import { logger, getRequestId } from "@/lib/logger";
 
 type OrderStatus = "DRAFT" | "PENDING" | "APPROVED" | "DELIVERED" | "CANCELLED";
 type Transition = { from: OrderStatus; to: OrderStatus; roles: string[] };
@@ -26,6 +26,7 @@ function isValidTransition(from: OrderStatus, to: OrderStatus, role: string): bo
 }
 
 async function patchHandler(req: NextRequest, { params }: { params: Record<string, string> }) {
+  const requestId = getRequestId(req);
   const session = await getSession();
   if (!session) return errorResponse("UNAUTHORIZED", "Not authenticated", 401);
 
@@ -120,14 +121,26 @@ async function patchHandler(req: NextRequest, { params }: { params: Record<strin
     // Atomic stock decrement inside a transaction
     try {
       await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        // Lock all product rows for this order before reading stock.
+        // Without FOR UPDATE, two concurrent approvals can both pass the
+        // stock check and both decrement, driving stock negative.
+        const productIds = order.items.map((i) => i.productId);
+        const locked = await tx.$queryRaw<{ id: string; stock: number }[]>`
+          SELECT id, stock FROM "Product"
+          WHERE id = ANY(${productIds}::uuid[])
+          FOR UPDATE
+        `;
+        const stockMap = new Map(locked.map((p) => [p.id, p.stock]));
+
         for (const item of order.items) {
-          const updated = await tx.product.updateMany({
-            where: { id: item.productId, stock: { gte: item.quantity } },
-            data: { stock: { decrement: item.quantity } },
-          });
-          if (updated.count === 0) {
+          const currentStock = stockMap.get(item.productId) ?? 0;
+          if (currentStock < item.quantity) {
             throw new Error(`OUT_OF_STOCK:${item.product.name}`);
           }
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { decrement: item.quantity } },
+          });
         }
 
         await tx.order.update({
@@ -150,7 +163,7 @@ async function patchHandler(req: NextRequest, { params }: { params: Record<strin
       if (msg.startsWith("OUT_OF_STOCK:")) {
         return errorResponse("OUT_OF_STOCK", `Insufficient stock for: ${msg.slice(13)}`, 422);
       }
-      logger.error("Order approval transaction failed", { orderId: order.id, error: msg });
+      logger.error("Order approval transaction failed", { requestId, orderId: order.id, error: msg });
       return errorResponse("SERVER_ERROR", "Failed to approve order", 500);
     }
 
@@ -215,6 +228,7 @@ async function patchHandler(req: NextRequest, { params }: { params: Record<strin
       url: "/dashboard/distributor/orders",
     }).catch((err: unknown) => {
       logger.error("Failed to enqueue push notification", {
+        requestId,
         event: "ORDER_PENDING",
         orderId: order.id,
         recipientId: order.distributorId,
@@ -232,6 +246,7 @@ async function patchHandler(req: NextRequest, { params }: { params: Record<strin
       url: "/dashboard/salesman/orders",
     }).catch((err: unknown) => {
       logger.error("Failed to enqueue push notification", {
+        requestId,
         event: `ORDER_${newStatus}`,
         orderId: order.id,
         recipientId: order.salesmanId,

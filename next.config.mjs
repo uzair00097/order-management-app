@@ -10,6 +10,8 @@ const nextConfig = {
   },
 
   async headers() {
+    const isDev = process.env.NODE_ENV === "development";
+
     return [
       {
         source: "/(.*)",
@@ -31,12 +33,12 @@ const nextConfig = {
             value: "max-age=63072000; includeSubDomains; preload",
           },
           // Content Security Policy
+          // 'unsafe-eval' is only needed for webpack HMR in development
           {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // Next.js inline scripts + Cloudinary images
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://res.cloudinary.com",

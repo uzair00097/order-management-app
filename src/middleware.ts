@@ -1,5 +1,6 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { generateRequestId } from "@/lib/logger";
 
 const PREVIEW_MODE = process.env.PREVIEW_MODE === "true";
 
@@ -13,8 +14,15 @@ if (PREVIEW_MODE && process.env.NODE_ENV === "production") {
 
 export default withAuth(
   function middleware(req) {
+    // Attach a request ID for log correlation — reuse client-supplied one if present
+    const requestId = req.headers.get("x-request-id") ?? generateRequestId();
+
     // Allow all dashboard access in preview mode (no DB needed)
-    if (PREVIEW_MODE) return NextResponse.next();
+    if (PREVIEW_MODE) {
+      const res = NextResponse.next();
+      res.headers.set("x-request-id", requestId);
+      return res;
+    }
 
     const { token } = req.nextauth;
     const { pathname } = req.nextUrl;
@@ -29,7 +37,11 @@ export default withAuth(
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
-    return NextResponse.next();
+    const res = NextResponse.next({
+      request: { headers: new Headers(req.headers) },
+    });
+    res.headers.set("x-request-id", requestId);
+    return res;
   },
   {
     callbacks: {

@@ -3,8 +3,9 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { errorResponse } from "@/lib/errors";
 import { PDFDocument, StandardFonts, rgb, PageSizes } from "pdf-lib";
+import { withRateLimit } from "@/lib/withRateLimit";
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+async function getHandler(_req: NextRequest, { params }: { params: Record<string, string> }) {
   const session = await getSession();
   if (!session) return errorResponse("UNAUTHORIZED", "Not authenticated", 401);
 
@@ -131,7 +132,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
   const pdfBytes = await pdfDoc.save();
 
-  return new NextResponse(pdfBytes, {
+  return new NextResponse(Buffer.from(pdfBytes), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="invoice-${order.id.slice(0, 8)}.pdf"`,
@@ -139,3 +140,5 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     },
   });
 }
+
+export const GET = withRateLimit("SALESMAN", getHandler);

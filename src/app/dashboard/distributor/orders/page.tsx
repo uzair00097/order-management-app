@@ -93,7 +93,7 @@ export default function DistributorOrdersPage() {
             onClick={() => setStatusFilter(s)}
             className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
               statusFilter === s
-                ? "bg-indigo-600 text-white border-indigo-600"
+                ? "bg-purple-800 text-white border-purple-800"
                 : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
             }`}
           >
@@ -151,7 +151,7 @@ export default function DistributorOrdersPage() {
                     href={`https://www.google.com/maps?q=${Number(order.lat).toFixed(6)},${Number(order.lng).toFixed(6)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-indigo-600 hover:underline"
+                    className="flex items-center gap-1 text-xs text-purple-700 hover:underline"
                   >
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -196,7 +196,7 @@ export default function DistributorOrdersPage() {
                 <button
                   onClick={() => updateStatus(order.id, "DELIVERED")}
                   disabled={actionLoading === order.id}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50"
+                  className="w-full bg-purple-800 hover:bg-purple-900 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50"
                 >
                   {actionLoading === order.id ? "…" : "Mark Delivered"}
                 </button>
@@ -208,7 +208,7 @@ export default function DistributorOrdersPage() {
             <button
               onClick={loadMore}
               disabled={loadingMore}
-              className="w-full py-2.5 text-sm text-indigo-600 font-medium rounded-xl border border-indigo-200 hover:bg-indigo-50 transition-colors disabled:opacity-50"
+              className="w-full py-2.5 text-sm text-purple-800 font-medium rounded-xl border border-purple-200 hover:bg-purple-50 transition-colors disabled:opacity-50"
             >
               {loadingMore ? "Loading…" : "Load more"}
             </button>

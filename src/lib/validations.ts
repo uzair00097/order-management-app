@@ -6,12 +6,13 @@ export const CreateOrderSchema = z.object({
     .array(
       z.object({
         productId: z.string().uuid(),
-        quantity: z.number().int().positive(),
+        quantity: z.number().int().positive().max(9999),
       })
     )
-    .min(1),
-  notes: z.string().max(500).optional(),
-  discountAmount: z.number().nonnegative().default(0),
+    .min(1)
+    .max(50),
+  notes: z.string().max(500).trim().optional(),
+  discountAmount: z.number().nonnegative().max(10_000_000).default(0),
   lat: z.number().min(-90).max(90).optional(),
   lng: z.number().min(-180).max(180).optional(),
 });
@@ -21,30 +22,30 @@ export const UpdateOrderStatusSchema = z.object({
 });
 
 export const CreateProductSchema = z.object({
-  name: z.string().min(1).max(200),
-  price: z.number().positive(),
-  stock: z.number().int().nonnegative(),
-  imageUrl: z.string().url().optional(),
+  name: z.string().min(1).max(200).trim(),
+  price: z.number().positive().max(10_000_000),
+  stock: z.number().int().nonnegative().max(1_000_000),
+  imageUrl: z.string().url().max(2048).optional(),
 });
 
 export const UpdateProductSchema = z.object({
-  price: z.number().positive().optional(),
-  stock: z.number().int().nonnegative().optional(),
-  imageUrl: z.string().url().nullable().optional(),
+  price: z.number().positive().max(10_000_000).optional(),
+  stock: z.number().int().nonnegative().max(1_000_000).optional(),
+  imageUrl: z.string().url().max(2048).nullable().optional(),
 });
 
 export const CreateCustomerSchema = z.object({
-  name: z.string().min(1).max(200),
-  address: z.string().min(1).max(500),
-  phone: z.string().max(20).optional(),
-  creditLimit: z.number().nonnegative().default(0),
+  name: z.string().min(1).max(200).trim(),
+  address: z.string().min(1).max(500).trim(),
+  phone: z.string().max(20).trim().optional(),
+  creditLimit: z.number().nonnegative().max(100_000_000).default(0),
 });
 
 export const UpdateCustomerSchema = z.object({
-  name: z.string().min(1).max(200).optional(),
-  address: z.string().min(1).max(500).optional(),
-  phone: z.string().max(20).optional(),
-  creditLimit: z.number().nonnegative().optional(),
+  name: z.string().min(1).max(200).trim().optional(),
+  address: z.string().min(1).max(500).trim().optional(),
+  phone: z.string().max(20).trim().optional(),
+  creditLimit: z.number().nonnegative().max(100_000_000).optional(),
 });
 
 export const PaginationSchema = z.object({

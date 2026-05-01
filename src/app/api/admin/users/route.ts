@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { errorResponse } from "@/lib/errors";
+import { withRateLimit } from "@/lib/withRateLimit";
 
 const CreateUserSchema = z.object({
   name: z.string().min(1).max(100),
@@ -13,7 +14,7 @@ const CreateUserSchema = z.object({
   distributorId: z.string().uuid().optional(),
 });
 
-export async function GET(req: NextRequest) {
+async function getHandler(req: NextRequest) {
   const session = await getSession();
   if (!session || session.user.role !== "ADMIN") return errorResponse("UNAUTHORIZED", "Admins only", 403);
 
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ data: users });
 }
 
-export async function POST(req: NextRequest) {
+async function postHandler(req: NextRequest) {
   const session = await getSession();
   if (!session || session.user.role !== "ADMIN") return errorResponse("UNAUTHORIZED", "Admins only", 403);
 
@@ -68,3 +69,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(user, { status: 201 });
 }
+
+export const GET = withRateLimit("ADMIN", getHandler as Parameters<typeof withRateLimit>[1]);
+export const POST = withRateLimit("ADMIN", postHandler as Parameters<typeof withRateLimit>[1]);

@@ -6,6 +6,7 @@ import { UpdateOrderStatusSchema } from "@/lib/validations";
 import { checkIdempotency, storeIdempotency } from "@/lib/idempotency";
 import { errorResponse } from "@/lib/errors";
 import { enqueue } from "@/lib/queue";
+import { withRateLimit } from "@/lib/withRateLimit";
 
 type OrderStatus = "DRAFT" | "PENDING" | "APPROVED" | "DELIVERED" | "CANCELLED";
 type Transition = { from: OrderStatus; to: OrderStatus; roles: string[] };
@@ -23,7 +24,7 @@ function isValidTransition(from: OrderStatus, to: OrderStatus, role: string): bo
   return ALLOWED_TRANSITIONS.some((t) => t.from === from && t.to === to && t.roles.includes(role));
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+async function patchHandler(req: NextRequest, { params }: { params: Record<string, string> }) {
   const session = await getSession();
   if (!session) return errorResponse("UNAUTHORIZED", "Not authenticated", 401);
 
@@ -63,17 +64,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   if (order.status === "DRAFT" && newStatus === "PENDING") {
-    const customer = await prisma.customer.findUnique({
-      where: { id: order.customerId },
-      select: { creditLimit: true },
-    });
-    const creditLimit = Number(customer?.creditLimit ?? 0);
-    if (creditLimit > 0) {
+    // Use a transaction with SELECT FOR UPDATE to prevent concurrent submissions
+    // from both passing the credit limit check simultaneously
+    const creditCheckResult = await prisma.$transaction(async (tx) => {
+      // Lock the customer row for the duration of this check
+      const customers = await tx.$queryRaw<{ creditLimit: string }[]>`
+        SELECT "creditLimit" FROM "Customer" WHERE id = ${order.customerId} FOR UPDATE
+      `;
+      const creditLimit = Number(customers[0]?.creditLimit ?? 0);
+      if (creditLimit === 0) return null; // unlimited
+
       const orderTotal = order.items.reduce(
         (sum, item) => sum + item.quantity * Number(item.unitPrice),
         0
       );
-      const outstandingItems = await prisma.orderItem.findMany({
+      const outstandingItems = await tx.orderItem.findMany({
         where: {
           order: {
             customerId: order.customerId,
@@ -89,12 +94,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         0
       );
       if (outstandingTotal + orderTotal > creditLimit) {
-        return errorResponse(
-          "CREDIT_LIMIT_EXCEEDED",
-          `Credit limit exceeded. Limit: ${creditLimit.toFixed(2)}, Outstanding: ${outstandingTotal.toFixed(2)}, This order: ${orderTotal.toFixed(2)}`,
-          422
-        );
+        return {
+          exceeded: true,
+          message: `Credit limit exceeded. Limit: ${creditLimit.toFixed(2)}, Outstanding: ${outstandingTotal.toFixed(2)}, This order: ${orderTotal.toFixed(2)}`,
+        };
       }
+      return null;
+    });
+
+    if (creditCheckResult?.exceeded) {
+      return errorResponse("CREDIT_LIMIT_EXCEEDED", creditCheckResult.message, 422);
     }
   }
 
@@ -204,3 +213,5 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   await storeIdempotency(userId, idempotencyKey, 200, responseBody);
   return NextResponse.json(responseBody);
 }
+
+export const PATCH = withRateLimit("SALESMAN", patchHandler);

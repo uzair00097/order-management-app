@@ -3,8 +3,9 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { UpdateProductSchema } from "@/lib/validations";
 import { errorResponse } from "@/lib/errors";
+import { withRateLimit } from "@/lib/withRateLimit";
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+async function patchHandler(req: NextRequest, { params }: { params: Record<string, string> }) {
   const session = await getSession();
   if (!session) return errorResponse("UNAUTHORIZED", "Not authenticated", 401);
   if (session.user.role !== "DISTRIBUTOR") return errorResponse("UNAUTHORIZED", "Only distributors can update products", 403);
@@ -41,7 +42,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json(updated);
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+async function deleteHandler(req: NextRequest, { params }: { params: Record<string, string> }) {
   const session = await getSession();
   if (!session) return errorResponse("UNAUTHORIZED", "Not authenticated", 401);
   if (session.user.role !== "DISTRIBUTOR") return errorResponse("UNAUTHORIZED", "Only distributors can delete products", 403);
@@ -64,3 +65,6 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
   return new NextResponse(null, { status: 204 });
 }
+
+export const PATCH = withRateLimit("DISTRIBUTOR", patchHandler);
+export const DELETE = withRateLimit("DISTRIBUTOR", deleteHandler);

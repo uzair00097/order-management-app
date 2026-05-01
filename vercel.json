@@ -2,7 +2,22 @@
   "crons": [
     {
       "path": "/api/cron/archive-orders",
-      "schedule": "0 2 1 * *"
+      "schedule": "0 2 * * 0"
+    },
+    {
+      "path": "/api/cron/cleanup-idempotency",
+      "schedule": "0 3 * * *"
     }
-  ]
+  ],
+  "functions": {
+    "src/app/api/dsr/pdf/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/cron/archive-orders/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/cron/cleanup-idempotency/route.ts": {
+      "maxDuration": 30
+    }
+  }
 }

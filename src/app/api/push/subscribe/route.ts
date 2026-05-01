@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { errorResponse } from "@/lib/errors";
+import { withRateLimit } from "@/lib/withRateLimit";
 
 const SubscribeSchema = z.object({
   endpoint: z.string().url(),
@@ -12,7 +13,7 @@ const SubscribeSchema = z.object({
   }),
 });
 
-export async function POST(req: NextRequest) {
+async function postHandler(req: NextRequest) {
   const session = await getSession();
   if (!session) return errorResponse("UNAUTHORIZED", "Not authenticated", 401);
 
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-export async function DELETE(req: NextRequest) {
+async function deleteHandler(req: NextRequest) {
   const session = await getSession();
   if (!session) return errorResponse("UNAUTHORIZED", "Not authenticated", 401);
 
@@ -53,3 +54,6 @@ export async function DELETE(req: NextRequest) {
 
   return NextResponse.json({ ok: true });
 }
+
+export const POST = withRateLimit("SALESMAN", postHandler as Parameters<typeof withRateLimit>[1]);
+export const DELETE = withRateLimit("SALESMAN", deleteHandler as Parameters<typeof withRateLimit>[1]);

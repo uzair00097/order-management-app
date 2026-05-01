@@ -2,6 +2,71 @@ import { NextAuthOptions, getServerSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
+
+// In-memory fallback when Redis is not configured.
+// In production with multiple instances, use Redis (Upstash) instead.
+const failedAttempts = new Map<string, { count: number; lockedUntil: number }>();
+
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+async function checkLoginRateLimit(key: string): Promise<{ blocked: boolean; remaining: number }> {
+  // Use Redis if available
+  if (process.env.UPSTASH_REDIS_REST_URL?.startsWith("https://")) {
+    try {
+      const { Redis } = await import("@upstash/redis");
+      const redis = new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL!,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+      });
+      const redisKey = `login_fail:${key}`;
+      const count = await redis.incr(redisKey);
+      if (count === 1) await redis.expire(redisKey, Math.floor(LOCKOUT_MS / 1000));
+      return { blocked: count > MAX_ATTEMPTS, remaining: Math.max(0, MAX_ATTEMPTS - count) };
+    } catch {
+      // fall through to in-memory fallback
+    }
+  }
+
+  const now = Date.now();
+  const record = failedAttempts.get(key);
+  if (record) {
+    if (record.lockedUntil > now) {
+      return { blocked: true, remaining: 0 };
+    }
+    if (record.count >= MAX_ATTEMPTS) {
+      failedAttempts.set(key, { count: record.count + 1, lockedUntil: now + LOCKOUT_MS });
+      return { blocked: true, remaining: 0 };
+    }
+  }
+  return { blocked: false, remaining: MAX_ATTEMPTS - (record?.count ?? 0) };
+}
+
+async function recordFailedLogin(key: string) {
+  if (process.env.UPSTASH_REDIS_REST_URL?.startsWith("https://")) return; // Redis path handled in checkLoginRateLimit
+  const now = Date.now();
+  const record = failedAttempts.get(key) ?? { count: 0, lockedUntil: 0 };
+  const newCount = record.lockedUntil < now ? 1 : record.count + 1;
+  failedAttempts.set(key, {
+    count: newCount,
+    lockedUntil: newCount >= MAX_ATTEMPTS ? now + LOCKOUT_MS : 0,
+  });
+}
+
+async function clearLoginRateLimit(key: string) {
+  if (process.env.UPSTASH_REDIS_REST_URL?.startsWith("https://")) {
+    try {
+      const { Redis } = await import("@upstash/redis");
+      const redis = new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL!,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+      });
+      await redis.del(`login_fail:${key}`);
+    } catch { /* ignore */ }
+  }
+  failedAttempts.delete(key);
+}
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt", maxAge: 8 * 60 * 60 },
@@ -12,17 +77,36 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) return null;
+
+        const ip = (req as { headers?: Record<string, string | string[]> })?.headers?.["x-forwarded-for"];
+        const ipStr = Array.isArray(ip) ? ip[0] : (ip ?? "unknown");
+        const rateLimitKey = `${ipStr}:${credentials.email.toLowerCase()}`;
+
+        const { blocked } = await checkLoginRateLimit(rateLimitKey);
+        if (blocked) {
+          logger.warn("Login blocked — rate limit exceeded", { route: "/api/auth/signin", key: rateLimitKey });
+          throw new Error("TOO_MANY_ATTEMPTS");
+        }
 
         const user = await prisma.user.findFirst({
           where: { email: credentials.email, deletedAt: null },
         });
 
-        if (!user) return null;
+        if (!user) {
+          await recordFailedLogin(rateLimitKey);
+          return null;
+        }
 
         const valid = await bcrypt.compare(credentials.password, user.passwordHash);
-        if (!valid) return null;
+        if (!valid) {
+          await recordFailedLogin(rateLimitKey);
+          logger.warn("Failed login attempt", { route: "/api/auth/signin", userId: user.id });
+          return null;
+        }
+
+        await clearLoginRateLimit(rateLimitKey);
 
         return {
           id: user.id,
@@ -51,7 +135,6 @@ export const authOptions: NextAuthOptions = {
           select: { tokenVersion: true, deletedAt: true },
         });
         if (!dbUser || dbUser.deletedAt || dbUser.tokenVersion !== token.tokenVersion) {
-          // Return token without id — authorized callback will see no session
           return { ...token, id: undefined as unknown as string };
         }
       }

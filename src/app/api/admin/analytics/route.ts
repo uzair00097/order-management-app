@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { errorResponse } from "@/lib/errors";
+import { withRateLimit } from "@/lib/withRateLimit";
 
-export async function GET() {
+async function getHandler() {
   const session = await getSession();
   if (!session || session.user.role !== "ADMIN") return errorResponse("UNAUTHORIZED", "Admins only", 403);
 
@@ -67,3 +68,5 @@ export async function GET() {
     })),
   });
 }
+
+export const GET = withRateLimit("ADMIN", getHandler as Parameters<typeof withRateLimit>[1]);

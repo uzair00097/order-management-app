@@ -8,7 +8,9 @@ import { withRateLimit } from "@/lib/withRateLimit";
 import { errorResponse } from "@/lib/errors";
 
 function toTsQuery(search: string) {
-  return search.trim().split(/\s+/).filter(Boolean).map((w) => `${w}:*`).join(" & ");
+  // Strip PostgreSQL tsquery special characters to prevent injection
+  const sanitized = search.replace(/[&|!:*'"\\()]/g, " ");
+  return sanitized.trim().split(/\s+/).filter(Boolean).map((w) => `${w}:*`).join(" & ");
 }
 
 async function getHandler(req: NextRequest) {

@@ -31,6 +31,15 @@ const links = [
       </svg>
     ),
   },
+  {
+    href: "/dashboard/distributor/dsr",
+    label: "DSR",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+  },
 ];
 
 export function DistributorNav() {
@@ -45,10 +54,13 @@ export function DistributorNav() {
             <Link
               key={link.href}
               href={link.href}
-              className={`flex-1 flex flex-col items-center py-3 gap-1 text-xs font-medium transition-colors ${
-                active ? "text-indigo-600" : "text-gray-500 hover:text-gray-700"
+              className={`flex-1 flex flex-col items-center pt-2 pb-3 gap-0.5 text-xs font-medium transition-colors relative ${
+                active ? "text-purple-800" : "text-gray-400 hover:text-gray-600"
               }`}
             >
+              {active && (
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-purple-800" />
+              )}
               {link.icon}
               {link.label}
             </Link>
@@ -56,7 +68,7 @@ export function DistributorNav() {
         })}
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex-1 flex flex-col items-center py-3 gap-1 text-xs font-medium text-gray-500 hover:text-red-500 transition-colors"
+          className="flex-1 flex flex-col items-center pt-2 pb-3 gap-0.5 text-xs font-medium text-gray-400 hover:text-red-500 transition-colors"
         >
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h5a2 2 0 012 2v1" />

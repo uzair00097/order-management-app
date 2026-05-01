@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { cloudinary } from "@/lib/cloudinary";
 import { errorResponse } from "@/lib/errors";
+import { withRateLimit } from "@/lib/withRateLimit";
 
-export async function POST(req: NextRequest) {
+async function postHandler(req: NextRequest) {
   const session = await getSession();
   if (!session) return errorResponse("UNAUTHORIZED", "Not authenticated", 401);
   if (session.user.role !== "DISTRIBUTOR") return errorResponse("UNAUTHORIZED", "Only distributors can upload images", 403);
@@ -36,3 +37,5 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ url: result.secure_url });
 }
+
+export const POST = withRateLimit("DISTRIBUTOR", postHandler as Parameters<typeof withRateLimit>[1]);

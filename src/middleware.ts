@@ -3,6 +3,14 @@ import { NextResponse } from "next/server";
 
 const PREVIEW_MODE = process.env.PREVIEW_MODE === "true";
 
+// Hard block: PREVIEW_MODE must never run in production
+if (PREVIEW_MODE && process.env.NODE_ENV === "production") {
+  throw new Error(
+    "[middleware] PREVIEW_MODE=true is not allowed in production. " +
+    "This disables authentication for all routes. Remove this env var immediately."
+  );
+}
+
 export default withAuth(
   function middleware(req) {
     // Allow all dashboard access in preview mode (no DB needed)
@@ -32,5 +40,14 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/api/orders/:path*", "/api/products/:path*", "/api/customers/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/api/orders/:path*",
+    "/api/products/:path*",
+    "/api/customers/:path*",
+    "/api/admin/:path*",
+    "/api/dsr/:path*",
+    "/api/upload",
+    "/api/push/:path*",
+  ],
 };

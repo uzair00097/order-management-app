@@ -98,7 +98,7 @@ export default function AdminUsersPage() {
   const roleBadge = (role: string) => {
     const styles: Record<string, string> = {
       ADMIN: "bg-purple-100 text-purple-900",
-      DISTRIBUTOR: "bg-indigo-100 text-indigo-700",
+      DISTRIBUTOR: "bg-purple-100 text-purple-800",
       SALESMAN: "bg-purple-100 text-purple-900",
     };
     return <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${styles[role] ?? ""}`}>{role}</span>;

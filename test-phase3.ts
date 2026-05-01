@@ -2,10 +2,10 @@
  * E2E tests for Phase 3 — credit limits
  *
  * Run with dev server up:
- *   npx ts-node --compiler-options '{"module":"CommonJS"}' test-phase3.ts
+ *   BASE_URL=http://localhost:3000 npx ts-node --compiler-options '{"module":"CommonJS"}' test-phase3.ts
  */
 
-const BASE = process.env.BASE_URL ?? "http://localhost:3001";
+const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 let passed = 0;
 let failed = 0;
 
@@ -63,19 +63,23 @@ async function run() {
   const prodData = (await prodRes.json()) as { data: { id: string; name: string; price: number }[] };
   ok("GET /api/products returns data", prodRes.ok && prodData.data.length > 0);
   const product = prodData.data[0];
-  console.log(`  Using product: ${product.name} @ PKR ${product.price}\n`);
+  const priceNum = Number(product.price);
+  // Credit limit: between 1x and 2x the product price so 1 unit fits but 2 don't
+  const creditLimit = Math.ceil(priceNum * 1.5);
+  console.log(`  Using product: ${product.name} @ PKR ${priceNum}`);
+  console.log(`  Dynamic credit limit: PKR ${creditLimit}\n`);
 
   // ── 1. Create customer with credit limit via POST /api/customers ────────
   console.log("[ Test 1 ] Create customer with credit limit");
   const custRes = await fetch(`${BASE}/api/customers`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Idempotency-Key": uuid(), Cookie: distCookie },
-    body: JSON.stringify({ name: "Credit Test Shop", address: "123 Test St", creditLimit: 500 }),
+    body: JSON.stringify({ name: "Credit Test Shop", address: "123 Test St", creditLimit }),
   });
   const custData = (await custRes.json()) as { id: string; name: string; creditLimit: unknown };
   ok("POST /api/customers returns 201", custRes.status === 201);
   ok("Response includes creditLimit", custData.creditLimit !== undefined);
-  ok("creditLimit equals 500", Number(custData.creditLimit) === 500, custData.creditLimit);
+  ok(`creditLimit equals ${creditLimit}`, Number(custData.creditLimit) === creditLimit, custData.creditLimit);
   const customerId = custData.id;
   console.log();
 
@@ -86,25 +90,26 @@ async function run() {
   ok("GET /api/customers is 200", listRes.ok);
   const found = listData.data.find((c) => c.id === customerId);
   ok("Customer in list", !!found);
-  ok("creditLimit in list item", found !== undefined && Number(found.creditLimit) === 500, found?.creditLimit);
+  ok("creditLimit in list item", found !== undefined && Number(found.creditLimit) === creditLimit, found?.creditLimit);
   console.log();
 
   // ── 3. PATCH /api/customers/[id] — update credit limit ────────────────
   console.log("[ Test 3 ] PATCH /api/customers/[id] updates credit limit");
+  const doubleLimit = creditLimit * 2;
   const patchRes = await fetch(`${BASE}/api/customers/${customerId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Cookie: distCookie },
-    body: JSON.stringify({ creditLimit: 1000 }),
+    body: JSON.stringify({ creditLimit: doubleLimit }),
   });
   const patchData = (await patchRes.json()) as { creditLimit: unknown };
   ok("PATCH returns 200", patchRes.ok, await (patchRes.ok ? null : patchRes.clone().text()));
-  ok("Updated creditLimit is 1000", Number(patchData.creditLimit) === 1000, patchData.creditLimit);
+  ok(`Updated creditLimit is ${doubleLimit}`, Number(patchData.creditLimit) === doubleLimit, patchData.creditLimit);
 
-  // Reset limit back to 500 for enforcement tests
+  // Reset limit back to creditLimit for enforcement tests
   await fetch(`${BASE}/api/customers/${customerId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Cookie: distCookie },
-    body: JSON.stringify({ creditLimit: 500 }),
+    body: JSON.stringify({ creditLimit }),
   });
   console.log();
 
@@ -120,12 +125,12 @@ async function run() {
 
   // ── 5. Credit limit enforcement: order OVER limit rejected ─────────────
   console.log("[ Test 5 ] DRAFT→PENDING blocked when order exceeds credit limit");
-  // price * qty > 500; e.g. price=80, qty=10 => 800
-  const qty = Math.ceil(510 / Number(product.price));
+  // 2 units always exceeds creditLimit since creditLimit = ceil(price * 1.5)
+  const overQty = 2;
   const overOrderRes = await fetch(`${BASE}/api/orders`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Idempotency-Key": uuid(), Cookie: salesCookie },
-    body: JSON.stringify({ customerId, items: [{ productId: product.id, quantity: qty }] }),
+    body: JSON.stringify({ customerId, items: [{ productId: product.id, quantity: overQty }] }),
   });
   const overOrder = (await overOrderRes.json()) as { id: string };
   ok("Draft order created (over limit)", overOrderRes.status === 201, overOrderRes.status);
@@ -150,7 +155,8 @@ async function run() {
 
   // ── 6. Credit limit enforcement: order UNDER limit passes ──────────────
   console.log("[ Test 6 ] DRAFT→PENDING allowed when order is within credit limit");
-  const underQty = Math.floor(400 / Number(product.price)) || 1;
+  // 1 unit always fits since creditLimit = ceil(price * 1.5) > price
+  const underQty = 1;
   const underOrderRes = await fetch(`${BASE}/api/orders`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Idempotency-Key": uuid(), Cookie: salesCookie },
@@ -171,10 +177,8 @@ async function run() {
 
   // ── 7. Outstanding balance counted — second order tips over limit ───────
   console.log("[ Test 7 ] Second order blocked because first PENDING order uses up the limit");
-  // underOrder is now PENDING, so outstanding = underQty * price
-  // A second order even with qty=1 might still exceed, but let's use a qty that would fit alone
-  // but not with the outstanding balance
-  const secondQty = underQty; // same amount — outstanding + this = 2x, which exceeds 500
+  // underOrder is now PENDING, outstanding = 1 * price. A second unit of 1 => outstanding + price > creditLimit
+  const secondQty = 1;
   const secondOrderRes = await fetch(`${BASE}/api/orders`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Idempotency-Key": uuid(), Cookie: salesCookie },
@@ -189,15 +193,9 @@ async function run() {
     body: JSON.stringify({ status: "PENDING" }),
   });
   const secondStatusData = (await secondStatusRes.json()) as { error?: { code: string } };
-  const outstandingTotal = underQty * Number(product.price);
-  const secondTotal = secondQty * Number(product.price);
-  const wouldExceed = outstandingTotal + secondTotal > 500;
-  if (wouldExceed) {
-    ok("Second order blocked by outstanding balance", secondStatusRes.status === 422, secondStatusRes.status);
-    ok("Error code is CREDIT_LIMIT_EXCEEDED", secondStatusData.error?.code === "CREDIT_LIMIT_EXCEEDED");
-  } else {
-    console.log(`  (Products too cheap to trigger — outstanding ${outstandingTotal} + ${secondTotal} <= 500, skipping)`);
-  }
+  // outstanding(1*price) + 1*price = 2*price > creditLimit (which is 1.5*price)
+  ok("Second order blocked by outstanding balance", secondStatusRes.status === 422, secondStatusRes.status);
+  ok("Error code is CREDIT_LIMIT_EXCEEDED", secondStatusData.error?.code === "CREDIT_LIMIT_EXCEEDED");
   console.log();
 
   // ── 8. creditLimit=0 means unlimited ──────────────────────────────────

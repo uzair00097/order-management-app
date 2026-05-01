@@ -1,4 +1,5 @@
 import { Client } from "@upstash/qstash";
+import { logger } from "@/lib/logger";
 
 const qstash = process.env.QSTASH_TOKEN
   ? new Client({ token: process.env.QSTASH_TOKEN })
@@ -16,7 +17,12 @@ export async function enqueue(path: string, body: unknown): Promise<void> {
         "x-queue-secret": process.env.QUEUE_SECRET ?? "dev-queue-secret",
       },
       body: JSON.stringify(body),
-    }).catch(() => {}); // fire-and-forget — don't block the caller
+    }).catch((err: unknown) => {
+      logger.error("Synchronous queue delivery failed", {
+        url,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
     return;
   }
 

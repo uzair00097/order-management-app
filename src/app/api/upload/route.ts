@@ -26,7 +26,7 @@ async function postHandler(req: NextRequest) {
 
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+  const uploadPromise = new Promise<{ secure_url: string }>((resolve, reject) => {
     cloudinary.uploader
       .upload_stream({ folder: "products", transformation: [{ width: 800, crop: "limit" }] }, (err, res) => {
         if (err || !res) return reject(err ?? new Error("Upload failed"));
@@ -34,6 +34,12 @@ async function postHandler(req: NextRequest) {
       })
       .end(buffer);
   });
+
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("Cloudinary upload timed out after 15s")), 15_000)
+  );
+
+  const result = await Promise.race([uploadPromise, timeoutPromise]);
 
   return NextResponse.json({ url: result.secure_url });
 }

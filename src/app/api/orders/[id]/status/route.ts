@@ -7,6 +7,7 @@ import { checkIdempotency, storeIdempotency } from "@/lib/idempotency";
 import { errorResponse } from "@/lib/errors";
 import { enqueue } from "@/lib/queue";
 import { withRateLimit } from "@/lib/withRateLimit";
+import { logger } from "@/lib/logger";
 
 type OrderStatus = "DRAFT" | "PENDING" | "APPROVED" | "DELIVERED" | "CANCELLED";
 type Transition = { from: OrderStatus; to: OrderStatus; roles: string[] };
@@ -64,6 +65,12 @@ async function patchHandler(req: NextRequest, { params }: { params: Record<strin
   }
 
   if (order.status === "DRAFT" && newStatus === "PENDING") {
+    // Reject if discount was set higher than the order subtotal
+    const subtotal = order.items.reduce((sum, item) => sum + item.quantity * Number(item.unitPrice), 0);
+    if (Number(order.discountAmount) > subtotal) {
+      return errorResponse("INVALID_INPUT", "Discount amount exceeds order subtotal", 422);
+    }
+
     // Use a transaction with SELECT FOR UPDATE to prevent concurrent submissions
     // from both passing the credit limit check simultaneously
     const creditCheckResult = await prisma.$transaction(async (tx) => {
@@ -111,32 +118,41 @@ async function patchHandler(req: NextRequest, { params }: { params: Record<strin
 
   if (newStatus === "APPROVED") {
     // Atomic stock decrement inside a transaction
-    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      for (const item of order.items) {
-        const updated = await tx.product.updateMany({
-          where: { id: item.productId, stock: { gte: item.quantity } },
-          data: { stock: { decrement: item.quantity } },
-        });
-        if (updated.count === 0) {
-          throw new Error(`OUT_OF_STOCK:${item.product.name}`);
+    try {
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        for (const item of order.items) {
+          const updated = await tx.product.updateMany({
+            where: { id: item.productId, stock: { gte: item.quantity } },
+            data: { stock: { decrement: item.quantity } },
+          });
+          if (updated.count === 0) {
+            throw new Error(`OUT_OF_STOCK:${item.product.name}`);
+          }
         }
+
+        await tx.order.update({
+          where: { id: order.id },
+          data: { status: "APPROVED", updatedBy: userId },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            userId,
+            action: "ORDER_APPROVED",
+            entityType: "Order",
+            entityId: order.id,
+            metadata: { previousStatus: order.status },
+          },
+        });
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.startsWith("OUT_OF_STOCK:")) {
+        return errorResponse("OUT_OF_STOCK", `Insufficient stock for: ${msg.slice(13)}`, 422);
       }
-
-      await tx.order.update({
-        where: { id: order.id },
-        data: { status: "APPROVED", updatedBy: userId },
-      });
-
-      await tx.auditLog.create({
-        data: {
-          userId,
-          action: "ORDER_APPROVED",
-          entityType: "Order",
-          entityId: order.id,
-          metadata: { previousStatus: order.status },
-        },
-      });
-    });
+      logger.error("Order approval transaction failed", { orderId: order.id, error: msg });
+      return errorResponse("SERVER_ERROR", "Failed to approve order", 500);
+    }
 
     responseBody = { id: order.id, status: "APPROVED" };
   } else if (newStatus === "CANCELLED" && order.status === "APPROVED") {
@@ -197,7 +213,14 @@ async function patchHandler(req: NextRequest, { params }: { params: Record<strin
       title: "New Order Submitted",
       body: `A new order requires your approval.`,
       url: "/dashboard/distributor/orders",
-    }).catch(() => {});
+    }).catch((err: unknown) => {
+      logger.error("Failed to enqueue push notification", {
+        event: "ORDER_PENDING",
+        orderId: order.id,
+        recipientId: order.distributorId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
   }
 
   // Push notification: distributor approved/delivered → notify salesman
@@ -207,7 +230,14 @@ async function patchHandler(req: NextRequest, { params }: { params: Record<strin
       title: newStatus === "APPROVED" ? "Order Approved" : "Order Delivered",
       body: `Your order has been ${newStatus.toLowerCase()}.`,
       url: "/dashboard/salesman/orders",
-    }).catch(() => {});
+    }).catch((err: unknown) => {
+      logger.error("Failed to enqueue push notification", {
+        event: `ORDER_${newStatus}`,
+        orderId: order.id,
+        recipientId: order.salesmanId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
   }
 
   await storeIdempotency(userId, idempotencyKey, 200, responseBody);

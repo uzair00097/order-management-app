@@ -23,6 +23,16 @@ async function postHandler(req: NextRequest) {
 
   const { endpoint, keys } = parsed.data;
 
+  // Prevent one user from claiming another user's push subscription
+  const existing = await prisma.pushSubscription.findUnique({
+    where: { endpoint },
+    select: { userId: true },
+  });
+  if (existing && existing.userId !== session.user.id) {
+    // Browser reused an endpoint — delete stale record so this user can claim it
+    await prisma.pushSubscription.delete({ where: { endpoint } });
+  }
+
   await prisma.pushSubscription.upsert({
     where: { endpoint },
     create: {
@@ -32,7 +42,7 @@ async function postHandler(req: NextRequest) {
       auth: keys.auth,
     },
     update: {
-      userId: session.user.id,
+      // Never update userId — only refresh keys
       p256dh: keys.p256dh,
       auth: keys.auth,
     },

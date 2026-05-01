@@ -33,7 +33,12 @@ async function checkLoginRateLimit(key: string): Promise<{ blocked: boolean; rem
   const record = failedAttempts.get(key);
   if (record) {
     if (record.lockedUntil > now) {
-      return { blocked: true, remaining: 0 };
+      return { blocked: true, remaining: 0 }; // actively locked
+    }
+    // lockout period has passed — give user a fresh window
+    if (record.lockedUntil > 0) {
+      failedAttempts.delete(key);
+      return { blocked: false, remaining: MAX_ATTEMPTS };
     }
     if (record.count >= MAX_ATTEMPTS) {
       failedAttempts.set(key, { count: record.count + 1, lockedUntil: now + LOCKOUT_MS });

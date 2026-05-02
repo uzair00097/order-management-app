@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   const hash = (pw: string) => bcrypt.hash(pw, 12);
 
+  // ── Step 1: upsert canonical production accounts ──────────────────────────
   const admin = await prisma.user.upsert({
     where: { email: "admin@hrenterprices.com" },
     update: {},
@@ -30,7 +31,7 @@ async function main() {
 
   const salesman = await prisma.user.upsert({
     where: { email: "salesman@hrenterprices.com" },
-    update: {},
+    update: { distributorId: distributor.id },
     create: {
       name: "Salesman",
       email: "salesman@hrenterprices.com",
@@ -40,6 +41,39 @@ async function main() {
     },
   });
 
+  // ── Step 2: migrate any stale demo / duplicate accounts ───────────────────
+  // Find every distributor that isn't the canonical one and re-point all their
+  // related data to the canonical distributor, then remove the stale record.
+  const staleDistributors = await prisma.user.findMany({
+    where: { role: "DISTRIBUTOR", id: { not: distributor.id } },
+  });
+
+  for (const stale of staleDistributors) {
+    await prisma.order.updateMany({ where: { distributorId: stale.id }, data: { distributorId: distributor.id } });
+    await prisma.order.updateMany({ where: { updatedBy: stale.id }, data: { updatedBy: distributor.id } });
+    await prisma.user.updateMany({ where: { distributorId: stale.id }, data: { distributorId: distributor.id } });
+    await prisma.product.updateMany({ where: { distributorId: stale.id }, data: { distributorId: distributor.id } });
+    await prisma.customer.updateMany({ where: { distributorId: stale.id }, data: { distributorId: distributor.id } });
+    await prisma.auditLog.deleteMany({ where: { userId: stale.id } });
+    await prisma.idempotencyRecord.deleteMany({ where: { userId: stale.id } });
+    await prisma.user.delete({ where: { id: stale.id } });
+    console.log(`Migrated stale distributor ${stale.email} → ${distributor.email}`);
+  }
+
+  // Remove stale demo salesmen (their orders were already re-pointed above)
+  const staleSalesmen = await prisma.user.findMany({
+    where: { role: "SALESMAN", id: { not: salesman.id }, distributorId: distributor.id },
+  });
+  for (const stale of staleSalesmen) {
+    await prisma.order.updateMany({ where: { salesmanId: stale.id }, data: { salesmanId: salesman.id } });
+    await prisma.order.updateMany({ where: { updatedBy: stale.id }, data: { updatedBy: salesman.id } });
+    await prisma.auditLog.deleteMany({ where: { userId: stale.id } });
+    await prisma.idempotencyRecord.deleteMany({ where: { userId: stale.id } });
+    await prisma.user.delete({ where: { id: stale.id } });
+    console.log(`Migrated stale salesman ${stale.email} → ${salesman.email}`);
+  }
+
+  // ── Step 3: seed sample products and customers ────────────────────────────
   await prisma.product.createMany({
     skipDuplicates: true,
     data: [

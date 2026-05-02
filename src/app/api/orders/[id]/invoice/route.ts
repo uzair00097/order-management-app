@@ -100,10 +100,10 @@ async function getHandler(_req: NextRequest, { params }: { params: Record<string
   page.drawLine({ start: { x: margin, y }, end: { x: width - margin, y }, thickness: 0.5, color: gray });
   y -= 14;
 
-  let total = 0;
+  let subtotal = 0;
   for (const item of order.items) {
     const amount = item.quantity * Number(item.unitPrice);
-    total += amount;
+    subtotal += amount;
     const name = item.product.name.length > 35 ? item.product.name.slice(0, 33) + "…" : item.product.name;
     page.drawText(name, { x: col.product, y, font: helvetica, size: 10, color: black });
     page.drawText(String(item.quantity), { x: col.qty, y, font: helvetica, size: 10, color: black });
@@ -115,6 +115,21 @@ async function getHandler(_req: NextRequest, { params }: { params: Record<string
   y -= 4;
   page.drawLine({ start: { x: margin, y }, end: { x: width - margin, y }, thickness: 0.5, color: gray });
   y -= 18;
+
+  const discount = Number(order.discountAmount ?? 0);
+  const total = subtotal - discount;
+
+  if (discount > 0) {
+    const subtotalLabel = `Subtotal: PKR ${subtotal.toFixed(2)}`;
+    const subtotalWidth = helvetica.widthOfTextAtSize(subtotalLabel, 10);
+    page.drawText(subtotalLabel, { x: width - margin - subtotalWidth, y, font: helvetica, size: 10, color: black });
+    y -= 16;
+
+    const discountLabel = `Discount: -PKR ${discount.toFixed(2)}`;
+    const discountWidth = helvetica.widthOfTextAtSize(discountLabel, 10);
+    page.drawText(discountLabel, { x: width - margin - discountWidth, y, font: helvetica, size: 10, color: rgb(0.1, 0.6, 0.3) });
+    y -= 16;
+  }
 
   // Total
   const totalLabel = `Total: PKR ${total.toFixed(2)}`;

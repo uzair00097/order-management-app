@@ -7,33 +7,33 @@ async function main() {
   const hash = (pw: string) => bcrypt.hash(pw, 12);
 
   const admin = await prisma.user.upsert({
-    where: { email: "admin@demo.com" },
+    where: { email: "admin@hrenterprices.com" },
     update: {},
     create: {
       name: "Admin",
-      email: "admin@demo.com",
+      email: "admin@hrenterprices.com",
       passwordHash: await hash("admin123"),
       role: "ADMIN",
     },
   });
 
   const distributor = await prisma.user.upsert({
-    where: { email: "distributor@demo.com" },
+    where: { email: "hr@hrenterprices.com" },
     update: { name: "HR ENTERPRICES" },
     create: {
       name: "HR ENTERPRICES",
-      email: "distributor@demo.com",
+      email: "hr@hrenterprices.com",
       passwordHash: await hash("dist123"),
       role: "DISTRIBUTOR",
     },
   });
 
   const salesman = await prisma.user.upsert({
-    where: { email: "salesman@demo.com" },
+    where: { email: "salesman@hrenterprices.com" },
     update: {},
     create: {
-      name: "Test Salesman",
-      email: "salesman@demo.com",
+      name: "Salesman",
+      email: "salesman@hrenterprices.com",
       passwordHash: await hash("sales123"),
       role: "SALESMAN",
       distributorId: distributor.id,
@@ -68,6 +68,7 @@ async function main() {
   });
 
   console.log("Seed complete:", { admin: admin.email, distributor: distributor.email, salesman: salesman.email });
+  console.log("IMPORTANT: Change all default passwords before going live.");
 }
 
 main()

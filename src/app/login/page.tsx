@@ -127,9 +127,6 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="animate-fade-up-2 text-center text-xs text-purple-400/50 mt-5">
-          Demo · salesman@demo.com / sales123
-        </p>
       </div>
     </div>
   );

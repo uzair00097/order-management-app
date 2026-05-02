@@ -31,9 +31,9 @@ const icons = {
 };
 
 const styles = {
-  success: "bg-emerald-600 text-white shadow-emerald-200",
-  error:   "bg-red-600 text-white shadow-red-200",
-  info:    "bg-gray-900 text-white shadow-gray-300",
+  success: "bg-emerald-600 text-white shadow-emerald-900/15",
+  error:   "bg-red-600   text-white shadow-red-900/15",
+  info:    "bg-gray-900  text-white shadow-gray-900/20",
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -45,17 +45,31 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
   }, []);
 
+  const dismiss = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
   return (
     <ToastContext.Provider value={{ show }}>
       {children}
-      <div className="fixed bottom-24 inset-x-4 z-[100] flex flex-col gap-2 pointer-events-none max-w-md mx-auto">
+      {/* Mobile: above bottom nav  |  Desktop: top-right corner */}
+      <div className="fixed bottom-24 md:bottom-auto md:top-4 inset-x-4 md:inset-x-auto md:right-4 md:left-auto z-[100] flex flex-col gap-2 pointer-events-none w-auto md:w-80 max-w-sm mx-auto md:mx-0">
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`animate-toast-in pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg text-sm font-medium ${styles[t.type]}`}
+            className={`animate-toast-in md:animate-toast-in-top pointer-events-auto flex items-center gap-2.5 pl-4 pr-3 py-3 rounded-xl shadow-lg text-sm font-medium ${styles[t.type]}`}
           >
             {icons[t.type]}
-            <span>{t.message}</span>
+            <span className="flex-1 leading-snug">{t.message}</span>
+            <button
+              onClick={() => dismiss(t.id)}
+              className="ml-1 opacity-60 hover:opacity-100 transition-opacity flex-shrink-0 p-0.5 rounded"
+              aria-label="Dismiss"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         ))}
       </div>

@@ -196,8 +196,8 @@ export default function DistributorProductsPage() {
     setEditLoading(false);
   }
 
-  const modalBase = "fixed inset-0 bg-black/50 backdrop-blur-sm z-30 flex items-end justify-center animate-fade-in";
-  const sheet = "bg-white rounded-t-2xl w-full max-w-lg p-6 animate-slide-up-modal max-h-[90vh] overflow-y-auto";
+  const modalBase = "fixed inset-0 bg-black/50 backdrop-blur-sm z-30 flex items-end md:items-center justify-center animate-fade-in";
+  const sheet = "bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg p-6 animate-slide-up-modal max-h-[90vh] overflow-y-auto";
   const input = "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-700 focus:border-transparent bg-gray-50/50";
 
   return (
@@ -445,13 +445,13 @@ export default function DistributorProductsPage() {
         </div>
       ) : viewMode === "grid" ? (
         <>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {sorted.map((p, i) => {
               const stock = stockLabel(p.stock);
               return (
                 <div
                   key={p.id}
-                  className="animate-fade-up bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md hover:border-purple-200 transition-all group"
+                  className="animate-fade-up bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-soft card-interactive group"
                   style={{ animationDelay: `${i * 0.04}s` }}
                 >
                   <div className="relative aspect-square">

@@ -8,22 +8,7 @@ import { errorResponse } from "@/lib/errors";
 import { enqueue } from "@/lib/queue";
 import { withRateLimit } from "@/lib/withRateLimit";
 import { logger, getRequestId } from "@/lib/logger";
-
-type OrderStatus = "DRAFT" | "PENDING" | "APPROVED" | "DELIVERED" | "CANCELLED";
-type Transition = { from: OrderStatus; to: OrderStatus; roles: string[] };
-
-const ALLOWED_TRANSITIONS: Transition[] = [
-  { from: "DRAFT", to: "PENDING", roles: ["SALESMAN"] },
-  { from: "DRAFT", to: "CANCELLED", roles: ["SALESMAN"] },
-  { from: "PENDING", to: "APPROVED", roles: ["DISTRIBUTOR"] },
-  { from: "PENDING", to: "CANCELLED", roles: ["DISTRIBUTOR"] },
-  { from: "APPROVED", to: "DELIVERED", roles: ["DISTRIBUTOR"] },
-  { from: "APPROVED", to: "CANCELLED", roles: ["ADMIN"] },
-];
-
-function isValidTransition(from: OrderStatus, to: OrderStatus, role: string): boolean {
-  return ALLOWED_TRANSITIONS.some((t) => t.from === from && t.to === to && t.roles.includes(role));
-}
+import { isValidTransition, type OrderStatus } from "@/lib/order-transitions";
 
 async function patchHandler(req: NextRequest, { params }: { params: Record<string, string> }) {
   const requestId = getRequestId(req);
@@ -259,4 +244,4 @@ async function patchHandler(req: NextRequest, { params }: { params: Record<strin
   return NextResponse.json(responseBody);
 }
 
-export const PATCH = withRateLimit("SALESMAN", patchHandler);
+export const PATCH = withRateLimit("DISTRIBUTOR", patchHandler);

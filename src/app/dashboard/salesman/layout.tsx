@@ -10,10 +10,10 @@ export default async function SalesmanLayout({ children }: { children: React.Rea
   if (!PREVIEW_MODE && (!session || session.user.role !== "SALESMAN")) redirect("/login");
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 md:pl-56">
+      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10 shadow-sm">
+        <div className="px-4 py-3 flex items-center justify-between md:px-6">
+          <div className="flex items-center gap-2.5 md:hidden">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-800 to-purple-950 flex items-center justify-center shadow-sm flex-shrink-0">
               <span className="text-white font-black text-sm tracking-tight">HR</span>
             </div>
@@ -22,6 +22,7 @@ export default async function SalesmanLayout({ children }: { children: React.Rea
               <p className="text-[10px] text-purple-400 font-medium">Sales Portal</p>
             </div>
           </div>
+          <p className="hidden md:block font-semibold text-sm text-gray-700">Sales Portal</p>
           <div className="flex items-center gap-2">
             <LangToggle />
             <span className="text-xs text-gray-500">{session?.user.name ?? "Preview"}</span>
@@ -29,7 +30,7 @@ export default async function SalesmanLayout({ children }: { children: React.Rea
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-4">{children}</main>
+      <main className="px-4 py-4 md:px-8 md:py-6">{children}</main>
 
       <SalesmanNav />
     </div>

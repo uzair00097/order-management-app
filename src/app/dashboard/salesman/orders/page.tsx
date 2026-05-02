@@ -16,6 +16,14 @@ type Order = {
 
 const STATUS_FILTERS: (OrderStatus | "ALL")[] = ["ALL", "DRAFT", "PENDING", "APPROVED", "DELIVERED", "CANCELLED"];
 
+const statusBorderClass: Record<string, string> = {
+  DRAFT:     "status-border-draft",
+  PENDING:   "status-border-pending",
+  APPROVED:  "status-border-approved",
+  DELIVERED: "status-border-delivered",
+  CANCELLED: "status-border-cancelled",
+};
+
 export default function SalesmanOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
@@ -108,7 +116,7 @@ export default function SalesmanOrdersPage() {
       ) : (
         <div className="space-y-3">
           {orders.map((order) => (
-            <div key={order.id} className="bg-white rounded-xl border border-gray-200 p-4">
+            <div key={order.id} className={`bg-white rounded-xl border border-gray-200 p-4 shadow-soft ${statusBorderClass[order.status] ?? ""}`}>
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <p className="text-sm font-medium text-gray-900">{order.customer.name}</p>

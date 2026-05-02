@@ -6,6 +6,14 @@ import { v4 as uuidv4 } from "uuid";
 
 type OrderStatus = "PENDING" | "APPROVED" | "DELIVERED" | "CANCELLED";
 
+const statusBorderClass: Record<string, string> = {
+  DRAFT:     "status-border-draft",
+  PENDING:   "status-border-pending",
+  APPROVED:  "status-border-approved",
+  DELIVERED: "status-border-delivered",
+  CANCELLED: "status-border-cancelled",
+};
+
 type Order = {
   id: string;
   status: string;
@@ -115,7 +123,7 @@ export default function DistributorOrdersPage() {
       ) : (
         <div className="space-y-4">
           {orders.map((order) => (
-            <div key={order.id} className="bg-white rounded-xl border border-gray-200 p-4">
+            <div key={order.id} className={`bg-white rounded-xl border border-gray-200 p-4 shadow-soft ${statusBorderClass[order.status] ?? ""}`}>
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{order.customer.name}</p>

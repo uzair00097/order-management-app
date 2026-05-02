@@ -1,5 +1,11 @@
+import { withSentryConfig } from "@sentry/nextjs";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    instrumentationHook: true,
+  },
+
   images: {
     remotePatterns: [
       {
@@ -16,24 +22,17 @@ const nextConfig = {
       {
         source: "/(.*)",
         headers: [
-          // Prevent clickjacking
           { key: "X-Frame-Options", value: "DENY" },
-          // Prevent MIME type sniffing
           { key: "X-Content-Type-Options", value: "nosniff" },
-          // Restrict referrer info
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          // Disable browser features not needed by this app
           {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(self), payment=()",
           },
-          // Force HTTPS
           {
             key: "Strict-Transport-Security",
             value: "max-age=63072000; includeSubDomains; preload",
           },
-          // Content Security Policy
-          // 'unsafe-eval' is only needed for webpack HMR in development
           {
             key: "Content-Security-Policy",
             value: [
@@ -42,9 +41,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://res.cloudinary.com",
-              // API calls to same origin + Upstash Redis + Cloudinary upload
-              "connect-src 'self' https://*.upstash.io https://api.cloudinary.com",
-              // Service worker
+              "connect-src 'self' https://*.upstash.io https://api.cloudinary.com https://*.ingest.sentry.io",
               "worker-src 'self' blob:",
               "frame-ancestors 'none'",
             ].join("; "),
@@ -55,4 +52,14 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  hideSourceMaps: true,
+  webpack: {
+    treeshake: { removeDebugLogging: true },
+    automaticVercelMonitors: true,
+  },
+});

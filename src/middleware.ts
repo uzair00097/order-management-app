@@ -2,6 +2,8 @@ import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 import { generateRequestId } from "@/lib/logger";
 
+const BODY_SIZE_LIMIT = 1 * 1024 * 1024; // 1 MB — upload route handles its own 5 MB limit
+
 const PREVIEW_MODE = process.env.PREVIEW_MODE === "true";
 
 // Hard block: PREVIEW_MODE must never run in production
@@ -14,6 +16,17 @@ if (PREVIEW_MODE && process.env.NODE_ENV === "production") {
 
 export default withAuth(
   function middleware(req) {
+    // Reject oversized request bodies before they reach route handlers
+    if (req.method !== "GET" && req.method !== "HEAD" && !req.nextUrl.pathname.startsWith("/api/upload")) {
+      const contentLength = req.headers.get("content-length");
+      if (contentLength && parseInt(contentLength, 10) > BODY_SIZE_LIMIT) {
+        return new NextResponse(
+          JSON.stringify({ error: { code: "PAYLOAD_TOO_LARGE", message: "Request body exceeds 1 MB limit." } }),
+          { status: 413, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // Attach a request ID for log correlation — reuse client-supplied one if present
     const requestId = req.headers.get("x-request-id") ?? generateRequestId();
 

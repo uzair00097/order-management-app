@@ -116,8 +116,8 @@ export default function AdminUsersPage() {
 
       {/* Add user modal */}
       {showAdd && (
-        <div className="fixed inset-0 bg-black/40 z-30 flex items-end justify-center">
-          <div className="bg-white rounded-t-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/40 z-30 flex items-end md:items-center justify-center">
+          <div className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-base font-semibold mb-4">Add User</h2>
             {addError && <p className="text-sm text-red-600 mb-3">{addError}</p>}
             <form onSubmit={addUser} className="space-y-3">
@@ -154,8 +154,8 @@ export default function AdminUsersPage() {
 
       {/* Reassign modal */}
       {assigningUser && (
-        <div className="fixed inset-0 bg-black/40 z-30 flex items-end justify-center">
-          <div className="bg-white rounded-t-2xl w-full max-w-lg p-6">
+        <div className="fixed inset-0 bg-black/40 z-30 flex items-end md:items-center justify-center">
+          <div className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg p-6">
             <h2 className="text-base font-semibold mb-1">Reassign Distributor</h2>
             <p className="text-sm text-gray-500 mb-4">{assigningUser.name}</p>
             <select value={assignDistId} onChange={(e) => setAssignDistId(e.target.value)}

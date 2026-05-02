@@ -68,9 +68,9 @@ export default function SalesmanProductsPage() {
         <div className="text-center py-16 text-gray-400 text-sm">No products found</div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {products.map((p) => (
-              <div key={p.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+              <div key={p.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-soft card-interactive">
                 <ProductImage imageUrl={p.imageUrl} name={p.name} />
                 <div className="p-3">
                   <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>

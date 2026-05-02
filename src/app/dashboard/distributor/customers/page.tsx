@@ -116,8 +116,8 @@ export default function DistributorCustomersPage() {
     setEditLoading(false);
   }
 
-  const modalBase = "fixed inset-0 bg-black/50 backdrop-blur-sm z-30 flex items-end justify-center animate-fade-in";
-  const sheet = "bg-white rounded-t-2xl w-full max-w-lg p-6 animate-slide-up-modal";
+  const modalBase = "fixed inset-0 bg-black/50 backdrop-blur-sm z-30 flex items-end md:items-center justify-center animate-fade-in";
+  const sheet = "bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg p-6 animate-slide-up-modal";
   const input = "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-700 focus:border-transparent bg-gray-50/50";
 
   return (

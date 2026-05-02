@@ -101,16 +101,42 @@ export default function NewOrderPage() {
 
   // ── Restore cart from IndexedDB on mount ──────────────────────────────────
   useEffect(() => {
-    loadCart().then((saved) => {
+    loadCart().then(async (saved) => {
       if (!saved) return;
       setSelectedCustomer(saved.customer);
-      setCart(saved.items);
       setNotes(saved.notes);
       if (saved.discountAmount > 0) {
         setDiscountType("flat");
         setDiscountInput(String(saved.discountAmount));
       }
-      if (saved.items.length > 0) setStep("products");
+
+      if (saved.items.length === 0) return;
+
+      // Validate saved products still exist — deleted products are silently removed
+      try {
+        const savedIds = saved.items.map((c) => c.product.id).join(",");
+        const res = await fetch(`/api/products/exists?ids=${encodeURIComponent(savedIds)}`);
+        const data = await res.json();
+        const availableIds = new Set<string>(data.ids ?? []);
+        const validItems = saved.items.filter((c) => availableIds.has(c.product.id));
+        setCart(validItems);
+        if (validItems.length > 0) setStep("products");
+        // Persist the cleaned cart so stale items don't reappear on next load
+        if (validItems.length < saved.items.length) {
+          const cleaned = { ...saved, items: validItems };
+          if (validItems.length === 0) {
+            const { clearCart } = await import("@/lib/idb");
+            clearCart().catch(() => {});
+          } else {
+            const { saveCart } = await import("@/lib/idb");
+            saveCart(cleaned).catch(() => {});
+          }
+        }
+      } catch {
+        // Network error — restore as-is; stale items caught at submit
+        setCart(saved.items);
+        if (saved.items.length > 0) setStep("products");
+      }
     }).catch(() => {});
 
     hasPendingOrders().then(setHasPending).catch(() => {});
@@ -479,7 +505,7 @@ export default function NewOrderPage() {
             const hasPrev = activeProductIdx > 0;
             const hasNext = activeProductIdx < products.length - 1;
             return (
-              <div className="fixed inset-0 z-40 flex flex-col bg-white">
+              <div className="fixed inset-0 md:left-56 z-40 flex flex-col bg-white">
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                   <button onClick={() => setActiveProductIdx(null)} className="text-gray-500 hover:text-gray-800">
@@ -564,7 +590,7 @@ export default function NewOrderPage() {
           {loadingProducts ? (
             <div className="flex justify-center py-16"><Spinner /></div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 mb-24">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-24 md:mb-6">
               {products.map((p, idx) => {
                 const qty = cartQty(p.id);
                 const outOfStock = p.stock === 0;
@@ -613,7 +639,7 @@ export default function NewOrderPage() {
           )}
 
           {cart.length > 0 && (
-            <div className="fixed bottom-20 left-0 right-0 px-4 z-10">
+            <div className="fixed bottom-20 md:bottom-6 left-0 md:left-56 right-0 px-4 z-10">
               <div className="max-w-lg mx-auto">
                 <button onClick={() => setStep("confirm")}
                   className="w-full bg-purple-800 text-white rounded-xl py-3.5 font-medium text-sm flex items-center justify-between px-5 shadow-lg">

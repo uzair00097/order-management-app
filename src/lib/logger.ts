@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/nextjs";
+
 type LogLevel = "info" | "warn" | "error";
 
 interface LogEntry {
@@ -14,6 +16,10 @@ function log(entry: LogEntry) {
   const line = JSON.stringify({ ts: new Date().toISOString(), ...entry });
   if (entry.level === "error") {
     console.error(line);
+    Sentry.captureMessage(entry.message, {
+      level: "error",
+      extra: entry,
+    });
   } else if (entry.level === "warn") {
     console.warn(line);
   } else {

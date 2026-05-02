@@ -70,8 +70,8 @@ export default function DSRPage() {
   return (
     <div className="pb-4">
       {/* Header row */}
-      <div className="flex items-center justify-between mb-4 gap-2">
-        <h1 className="text-lg font-semibold text-gray-900 shrink-0">Daily Sales Report</h1>
+      <div className="flex items-center justify-between mb-5 gap-2">
+        <h1 className="text-xl font-bold text-gray-900 shrink-0 tracking-tight">Daily Sales Report</h1>
         <div className="flex items-center gap-2">
           <input
             type="date"
@@ -98,8 +98,8 @@ export default function DSRPage() {
 
       {loading ? (
         <div className="space-y-4">
-          <SkeletonStatCards />
-          <SkeletonStatCards />
+          <SkeletonStatCards cols={4} />
+          <SkeletonStatCards cols={4} />
         </div>
       ) : !data ? (
         <div className="text-center py-20 text-gray-400 text-sm">Failed to load report</div>
@@ -115,7 +115,7 @@ export default function DSRPage() {
       ) : (
         <div className="space-y-4">
           {/* Gradient summary cards */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="animate-fade-up rounded-2xl bg-gradient-to-br from-purple-600 to-purple-900 p-4 shadow-lg shadow-purple-900/20">
               <p className="text-2xl font-bold text-white">{data.summary.totalOrders}</p>
               <p className="text-xs text-purple-200 mt-1">Total Orders</p>

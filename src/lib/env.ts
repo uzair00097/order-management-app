@@ -12,6 +12,7 @@ const PRODUCTION_REQUIRED_VARS = [
   "CLOUDINARY_API_SECRET",
   "CRON_SECRET",
   "QUEUE_SECRET",
+  "SENTRY_DSN",
 ] as const;
 
 function validateEnv() {

@@ -68,7 +68,7 @@ export default function AdminAnalyticsPage() {
       <h1 className="text-lg font-semibold text-gray-900">Analytics</h1>
 
       {/* Summary stat cards */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {statCards.map((s) => (
           <div
             key={s.label}

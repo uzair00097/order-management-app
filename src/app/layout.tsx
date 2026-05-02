@@ -10,6 +10,11 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 export const metadata: Metadata = {
   title: "Order Management",
   description: "Distributor & Salesman Order Management App",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/icon-192.png",
+  },
 };
 
 export const viewport: Viewport = {
@@ -21,7 +26,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="antialiased bg-gray-50 text-gray-900 font-[var(--font-inter)]">
+      <body className="antialiased bg-gray-50 text-gray-900 font-sans">
         <Providers>
           <ToastProvider>{children}</ToastProvider>
         </Providers>

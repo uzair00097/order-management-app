@@ -112,7 +112,7 @@ async function patchHandler(req: NextRequest, { params }: { params: Record<strin
         const productIds = order.items.map((i) => i.productId);
         const locked = await tx.$queryRaw<{ id: string; stock: number }[]>`
           SELECT id, stock FROM "Product"
-          WHERE id = ANY(${productIds}::uuid[])
+          WHERE id = ANY(${productIds})
           FOR UPDATE
         `;
         const stockMap = new Map(locked.map((p) => [p.id, p.stock]));

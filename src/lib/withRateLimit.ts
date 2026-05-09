@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { rateLimitByRole } from "@/lib/ratelimit";
+import { getRateLimiter } from "@/lib/ratelimit";
 import { errorResponse } from "@/lib/errors";
 
 type Handler = (req: NextRequest, ctx: { params: Record<string, string> }) => Promise<NextResponse>;
 
 export function withRateLimit(role: string, handler: Handler): Handler {
   return async (req, ctx) => {
-    // Skip rate limiting when Upstash is not configured
-    if (!process.env.UPSTASH_REDIS_REST_URL?.startsWith("https://")) {
-      return handler(req, ctx);
-    }
+    const limiter = getRateLimiter(role);
+    if (!limiter) return handler(req, ctx);
 
-    const limiter = rateLimitByRole[role] ?? rateLimitByRole["SALESMAN"];
     const identifier = `${role}:${req.ip ?? "anonymous"}`;
     const { success } = await limiter.limit(identifier);
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getSession, invalidateTokenCache } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { errorResponse } from "@/lib/errors";
@@ -28,6 +28,8 @@ async function patchHandler(req: NextRequest, { params }: { params: { id: string
     select: { id: true, name: true, role: true, distributorId: true },
   });
 
+  await invalidateTokenCache(params.id);
+
   await prisma.auditLog.create({
     data: {
       userId: session.user.id,
@@ -53,6 +55,8 @@ async function deleteHandler(req: NextRequest, { params }: { params: { id: strin
     where: { id: params.id },
     data: { deletedAt: new Date(), tokenVersion: { increment: 1 } },
   });
+
+  await invalidateTokenCache(params.id);
 
   await prisma.auditLog.create({
     data: { userId: session.user.id, action: "USER_DELETED", entityType: "User", entityId: params.id },

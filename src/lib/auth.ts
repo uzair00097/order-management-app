@@ -3,6 +3,33 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { getRedis } from "@/lib/redis";
+
+// --- Token-version cache ---
+// Caches { tv: tokenVersion, deleted: boolean } for 60 s to avoid a DB
+// round-trip on every authenticated request. Must be invalidated immediately
+// when tokenVersion is incremented (forced logout / user deletion).
+type TokenCacheValue = { tv: number; deleted: boolean };
+const TOKEN_CACHE_TTL = 60; // seconds
+const tvKey = (id: string) => `auth:tv:${id}`;
+
+export async function invalidateTokenCache(userId: string): Promise<void> {
+  const redis = getRedis();
+  if (!redis) return;
+  try { await redis.del(tvKey(userId)); } catch { /* ignore */ }
+}
+
+async function readTokenCache(userId: string): Promise<TokenCacheValue | null> {
+  const redis = getRedis();
+  if (!redis) return null;
+  try { return await redis.get<TokenCacheValue>(tvKey(userId)); } catch { return null; }
+}
+
+async function writeTokenCache(userId: string, value: TokenCacheValue): Promise<void> {
+  const redis = getRedis();
+  if (!redis) return;
+  try { await redis.set(tvKey(userId), value, { ex: TOKEN_CACHE_TTL }); } catch { /* ignore */ }
+}
 
 // In-memory fallback when Redis is not configured.
 // In production with multiple instances, use Redis (Upstash) instead.
@@ -133,12 +160,29 @@ export const authOptions: NextAuthOptions = {
         token.tokenVersion = user.tokenVersion;
       }
 
-      // On every request, verify tokenVersion matches DB — invalidates forced logouts
+      // Verify tokenVersion to detect forced logouts / soft-deletes.
+      // Check Redis cache first; fall back to DB on a miss, then populate cache.
       if (token.id) {
+        const userId = token.id as string;
+
+        const cached = await readTokenCache(userId);
+        if (cached !== null) {
+          if (cached.deleted || cached.tv !== (token.tokenVersion as number)) {
+            return { ...token, id: undefined as unknown as string };
+          }
+          return token;
+        }
+
+        // Cache miss — hit DB once and cache the result for TOKEN_CACHE_TTL seconds.
         const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
+          where: { id: userId },
           select: { tokenVersion: true, deletedAt: true },
         });
+
+        if (dbUser) {
+          await writeTokenCache(userId, { tv: dbUser.tokenVersion, deleted: dbUser.deletedAt !== null });
+        }
+
         if (!dbUser || dbUser.deletedAt || dbUser.tokenVersion !== token.tokenVersion) {
           return { ...token, id: undefined as unknown as string };
         }

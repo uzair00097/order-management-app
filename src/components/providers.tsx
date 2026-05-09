@@ -1,5 +1,6 @@
 "use client";
 import { SessionProvider, useSession } from "next-auth/react";
+import type { Session } from "next-auth";
 import { useEffect } from "react";
 import { LocaleProvider } from "@/contexts/locale";
 
@@ -72,9 +73,9 @@ function SWSetup() {
   return null;
 }
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children, session }: { children: React.ReactNode; session: Session | null }) {
   return (
-    <SessionProvider>
+    <SessionProvider session={session}>
       <LocaleProvider>
         <SWSetup />
         <PushSetup />

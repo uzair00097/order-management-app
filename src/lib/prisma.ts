@@ -5,7 +5,7 @@ const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["query", "warn", "error"] : ["error"],
+    log: ["warn", "error"],
     datasources: { db: { url: process.env.DATABASE_URL } },
   });
 

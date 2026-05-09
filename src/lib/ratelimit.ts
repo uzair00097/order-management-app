@@ -1,13 +1,19 @@
 import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
+import { getRedis } from "@/lib/redis";
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
+let _limiters: Record<string, Ratelimit> | null = null;
 
-export const rateLimitByRole: Record<string, Ratelimit> = {
-  SALESMAN: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(60, "1 m") }),
-  DISTRIBUTOR: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(120, "1 m") }),
-  ADMIN: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(300, "1 m") }),
-};
+export function getRateLimiter(role: string): Ratelimit | null {
+  const redis = getRedis();
+  if (!redis) return null;
+
+  if (!_limiters) {
+    _limiters = {
+      SALESMAN: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(60, "1 m") }),
+      DISTRIBUTOR: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(120, "1 m") }),
+      ADMIN: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(300, "1 m") }),
+    };
+  }
+
+  return _limiters[role] ?? _limiters.SALESMAN;
+}
